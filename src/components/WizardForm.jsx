@@ -5,6 +5,9 @@ import Step4_Medical from './steps/Step4_Medical';
 import Step5_Clauses from './steps/Step5_Clauses';
 import Step6_Summary from './steps/Step6_Summary';
 
+import logoPadua from '../assets/images/logo_padua.jpg';
+import logoMetanoiia from '../assets/images/logo_metanoiia.png';
+
 /* ── SVG Icon Helpers ─────────────────────────────────────── */
 const IconCheck = () => (
     <svg viewBox="0 0 24 24" fill="none" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -282,7 +285,7 @@ export default function WizardForm() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             flexShrink: 0
                         }}>
-                            <img src="/src/assets/images/logo_padua.jpg" alt="Colegio San Antonio de Padua"
+                            <img src={logoPadua} alt="Colegio San Antonio de Padua"
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div>
@@ -312,7 +315,7 @@ export default function WizardForm() {
                             width: '64px', height: '64px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                         }}>
-                            <img src="/src/assets/images/logo_metanoiia.png" alt="Metanoiia"
+                            <img src={logoMetanoiia} alt="Metanoiia"
                                 style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                         </div>
                         <div style={{ textAlign: 'right' }}>
