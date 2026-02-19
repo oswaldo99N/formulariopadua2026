@@ -7,7 +7,9 @@ import {
     query,
     orderBy,
     where,
-    serverTimestamp
+    serverTimestamp,
+    deleteDoc,
+    doc
 } from "firebase/firestore";
 // import { getAnalytics } from "firebase/analytics";
 
@@ -26,4 +28,4 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 // const analytics = getAnalytics(app); 
 
-export { db, collection, addDoc, getDocs, query, orderBy, where, serverTimestamp };
+export { db, collection, addDoc, getDocs, query, orderBy, where, serverTimestamp, deleteDoc, doc };
