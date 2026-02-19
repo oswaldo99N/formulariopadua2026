@@ -35,8 +35,14 @@ const Step3_GuardianData = ({ data, updateData, onNext, onBack }) => {
     const handleNext = () => {
         const { guardianName, guardianPhone, guardianRelation, emergencyPhone } = data;
 
-        if (!guardianName?.trim() || !guardianPhone?.trim() || !guardianRelation) {
-            alert("Por favor complete todos los campos obligatorios.");
+        if (!guardianName?.trim() || !guardianPhone?.trim() || !guardianRelation || !data.guardianEmail?.trim()) {
+            alert("Por favor complete todos los campos obligatorios (incluyendo Email).");
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(data.guardianEmail)) {
+            alert("Por favor ingrese un correo electrónico válido.");
             return;
         }
 
@@ -69,6 +75,17 @@ const Step3_GuardianData = ({ data, updateData, onNext, onBack }) => {
                         placeholder="Nombre completo (Solo letras)"
                         value={data.guardianName || ''}
                         onChange={handleNameChange}
+                    />
+                </div>
+
+                <div className="form-group">
+                    <label htmlFor="guardianEmail">Correo Electrónico (Para enviar comprobante)</label>
+                    <input
+                        id="guardianEmail"
+                        type="email"
+                        placeholder="ejemplo@correo.com"
+                        value={data.guardianEmail || ''}
+                        onChange={(e) => updateData({ guardianEmail: e.target.value })}
                     />
                 </div>
 

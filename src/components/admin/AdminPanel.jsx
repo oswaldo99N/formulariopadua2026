@@ -218,7 +218,7 @@ const AdminPanel = () => {
             doc.setFontSize(11);
             doc.setTextColor(255, 255, 255);
             doc.text(title, 25, yPos);
-            yPos += 12;
+            yPos += 14; // Más espacio después del título
             doc.setTextColor(...colorText);
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
@@ -229,94 +229,149 @@ const AdminPanel = () => {
             doc.text(`${label}:`, x, yPos);
             const labelWidth = doc.getTextWidth(`${label}: `);
             doc.setFont("helvetica", "normal");
-            doc.text(`${value || '-'}`, x + labelWidth, yPos);
-            if (!inline) yPos += 7;
+
+            // Manejo de texto largo
+            const textValue = `${value || '-'}`;
+            const splitText = doc.splitTextToSize(textValue, 170 - x - labelWidth); // Ajustar ancho disponible
+            doc.text(splitText, x + labelWidth, yPos);
+
+            if (!inline) {
+                // Calcular cuánto espacio ocupa el texto dividido
+                const lines = splitText.length;
+                yPos += (lines * 5) + 4; // 5 es aprox la altura de línea, +4 de padding
+            }
         };
 
         // --- 1. DATOS DEL ESTUDIANTE ---
         drawSection("1. DATOS DEL ESTUDIANTE");
 
         drawField("Nombre Completo", record.studentName, 20, true);
-        drawField("Cédula", record.idCard, 120, false); yPos += 7;
+        drawField("Cédula", record.idCard, 120, false); yPos += 8; // Reset inline line
 
         drawField("Género", record.gender || 'No especificado', 20, true);
-        drawField("Edad", `${record.age} años`, 120, false); yPos += 7;
+        drawField("Edad", `${record.age} años`, 120, false); yPos += 8;
 
         drawField("Curso", `${record.grade || ''} "${record.parallel || ''}"`);
-        yPos += 5;
+        yPos += 4;
 
         // --- 2. DATOS DEL REPRESENTANTE ---
         drawSection("2. DATOS DEL REPRESENTANTE");
 
         drawField("Nombre del Representante", record.guardianName);
         drawField("Parentesco", record.guardianRelation, 20, true);
-        drawField("Teléfono", record.guardianPhone, 120, false); yPos += 7;
+        drawField("Teléfono", record.guardianPhone, 120, false); yPos += 8;
         drawField("Contacto de Emergencia", `${record.emergencyPhone || 'No registrado'}`);
-        yPos += 5;
+        yPos += 4;
 
         // --- 3. FICHA MÉDICA ---
         drawSection("3. INFORMACIÓN MÉDICA");
 
         drawField("Tipo de Sangre", record.bloodType || 'No sabe');
+
         drawField("¿Tiene Seguro Médico?", record.hasInsurance ? 'SÍ' : 'NO');
         if (record.hasInsurance) {
             doc.setFont("helvetica", "italic");
             doc.setFontSize(9);
-            doc.text(`   Detalle: ${record.insuranceType || ''} - ${record.insuranceDetail || ''} (Tel: ${record.insuranceNumber || ''})`, 25, yPos);
+            const detailText = `Detalle: ${record.insuranceType || ''} - ${record.insuranceDetail || ''} (Tel: ${record.insuranceNumber || ''})`;
+            const splitDetail = doc.splitTextToSize(detailText, 160);
+            doc.text(splitDetail, 25, yPos);
+            yPos += (splitDetail.length * 5) + 4;
             doc.setFontSize(10);
             doc.setFont("helvetica", "normal");
-            yPos += 7;
+        } else {
+            yPos += 2;
         }
 
         drawField("¿Alergias?", record.hasAllergies ? 'SÍ' : 'NO');
         if (record.hasAllergies) {
-            doc.text(`   Detalle: ${record.allergiesDetail || ''}`, 25, yPos); yPos += 7;
+            doc.setFont("helvetica", "italic"); // Opcional: cursiva para detalles
+            const detailText = `Detalle: ${record.allergiesDetail || ''}`;
+            const splitDetail = doc.splitTextToSize(detailText, 160);
+            doc.text(splitDetail, 25, yPos);
+            yPos += (splitDetail.length * 5) + 4;
+            doc.setFont("helvetica", "normal");
+        } else {
+            yPos += 2;
         }
 
         drawField("¿Toma Medicación?", record.hasMedication ? 'SÍ' : 'NO');
         if (record.hasMedication) {
-            doc.text(`   Detalle: ${record.medicationDetail || ''}`, 25, yPos); yPos += 7;
+            doc.setFont("helvetica", "italic");
+            const detailText = `Detalle: ${record.medicationDetail || ''}`;
+            const splitDetail = doc.splitTextToSize(detailText, 160);
+            doc.text(splitDetail, 25, yPos);
+            yPos += (splitDetail.length * 5) + 4;
+            doc.setFont("helvetica", "normal");
+        } else {
+            yPos += 2;
         }
+
         yPos += 5;
 
         // --- 4. AUTORIZACIONES Y COMPROMISOS ---
         // Verificamos si cabe en esta página, si no, nueva página
-        if (yPos > 240) {
+        if (yPos > 220) {
             doc.addPage();
             yPos = 30;
         }
 
         drawSection("4. COMPROMISO Y AUTORIZACIONES");
 
-        const checkIcon = "X"; // Simulación de check
-
         doc.setFontSize(9);
-        doc.text(`[ ${record.acceptedRules ? 'SI' : 'NO'} ]  ACEPTACIÓN DE NORMAS DE CONVIVENCIA`, 25, yPos);
+        const check = (val) => val ? '[ SI ]' : '[ NO ]';
+
+        doc.text(`${check(record.acceptedRules)}  ACEPTACIÓN DE NORMAS DE CONVIVENCIA`, 25, yPos);
         yPos += 5;
         doc.setTextColor(...colorLight);
         doc.text("     El estudiante y representante aceptan cumplir con el reglamento de desconexión.", 25, yPos);
         doc.setTextColor(...colorText);
-        yPos += 8;
+        yPos += 10;
 
-        doc.text(`[ ${record.acceptedLiability ? 'SI' : 'NO'} ]  EXONERACIÓN Y RESPONSABILIDAD MÉDICA`, 25, yPos);
+        doc.text(`${check(record.acceptedLiability)}  EXONERACIÓN Y RESPONSABILIDAD MÉDICA`, 25, yPos);
         yPos += 5;
         doc.setTextColor(...colorLight);
         doc.text("     Autorizan atención médica de urgencia y exoneran de responsabilidad por pérdidas.", 25, yPos);
         doc.setTextColor(...colorText);
-        yPos += 8;
+        yPos += 10;
 
-        doc.text(`[ ${record.acceptedMedia ? 'SI' : 'NO'} ]  USO DE IMAGEN INSTITUCIONAL`, 25, yPos);
+        doc.text(`${check(record.acceptedMedia)}  USO DE IMAGEN INSTITUCIONAL`, 25, yPos);
         yPos += 5;
         doc.setTextColor(...colorLight);
         doc.text("     Autorizan el uso de fotografías y videos para fines pastorales e informativos.", 25, yPos);
         doc.setTextColor(...colorText);
+        yPos += 10;
+
+        // HABEAS DATA
+        doc.text(`${check(record.habeasData)}  POLÍTICA DE TRATAMIENTO DE DATOS (HABEAS DATA)`, 25, yPos);
+        yPos += 5;
+        doc.setTextColor(...colorLight);
+        doc.text("     Acepto la política de tratamiento de datos y autorizo el uso de la información.", 25, yPos);
+        doc.setTextColor(...colorText);
         yPos += 15;
 
         // --- FIRMAS ---
-        yPos = Math.max(yPos, 250); // Empujar al final si hay espacio, o donde esté
+        // Asegurar que las firmas no queden cortadas al final
+        if (yPos > 250) {
+            doc.addPage();
+            yPos = 40;
+        } else {
+            yPos = Math.max(yPos, 230); // Empujar un poco abajo si hay espacio
+        }
 
         doc.setLineWidth(0.5);
         doc.setDrawColor(0);
+
+        // Firma Representante (Izquierda)
+        // Intentar dibujar imagen de firma si existe
+        if (record.signature) {
+            try {
+                // Ajustar posición para que quede centrada sobre la línea (aprox x=30 a 90, ancho 60)
+                // Imagen de 40 de ancho -> x=40
+                doc.addImage(record.signature, 'PNG', 40, yPos - 25, 40, 20);
+            } catch (e) {
+                console.error("Error adding signature to PDF:", e);
+            }
+        }
 
         doc.line(30, yPos, 90, yPos);
         doc.line(120, yPos, 180, yPos);
@@ -337,7 +392,11 @@ const AdminPanel = () => {
         // Footer
         doc.setFontSize(8);
         doc.setTextColor(150);
-        doc.text(`Documento generado automáticamete el ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()}`, 105, 290, null, null, "center");
+        const pageCount = doc.internal.getNumberOfPages();
+        for (let i = 1; i <= pageCount; i++) {
+            doc.setPage(i);
+            doc.text(`Documento generado automáticamente el ${new Date().toLocaleDateString()} a las ${new Date().toLocaleTimeString()} - Pág ${i}/${pageCount}`, 105, 290, null, null, "center");
+        }
 
         if (!isBulk) {
             doc.save(`Ficha_${record.studentName?.replace(/\s+/g, '_') || 'Inscripcion'}.pdf`);
@@ -355,7 +414,7 @@ const AdminPanel = () => {
     };
 
     const downloadCSV = () => {
-        const headers = ["ID", "Fecha", "Estudiante", "Cédula", "Género", "Curso", "Paralelo", "Representante", "Teléfono", "Parentesco", "Seguro", "Tipo Seguro", "Alergias", "Medicación"];
+        const headers = ["ID", "Fecha", "Estudiante", "Cédula", "Género", "Curso", "Paralelo", "Representante", "Email", "Teléfono", "Parentesco", "Seguro", "Tipo Seguro", "Alergias", "Medicación"];
         const csvRows = [headers.join(",")];
 
         registros.forEach(row => {
@@ -368,6 +427,7 @@ const AdminPanel = () => {
                 row.grade || '',
                 row.parallel || '',
                 `"${row.guardianName || ''}"`,
+                row.guardianEmail || '',
                 row.guardianPhone || '',
                 row.guardianRelation || '',
                 row.hasInsurance ? 'Sí' : 'No',
@@ -383,6 +443,30 @@ const AdminPanel = () => {
         const a = document.createElement("a");
         a.setAttribute("href", url);
         a.setAttribute("download", `inscripciones_padua_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
+    const downloadContactsCSV = () => {
+        const headers = ["Estudiante", "Representante", "Teléfono", "Email"];
+        const csvRows = [headers.join(",")];
+
+        filteredData.forEach(row => {
+            const values = [
+                `"${row.studentName || ''}"`,
+                `"${row.guardianName || ''}"`,
+                row.guardianPhone || '',
+                row.guardianEmail || ''
+            ];
+            csvRows.push(values.join(","));
+        });
+
+        const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.setAttribute("href", url);
+        a.setAttribute("download", `contactos_padua_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -520,12 +604,15 @@ const AdminPanel = () => {
                             {activeTab === 'dashboard' ? 'Resumen estadístico del retiro 2026.' : 'Administra y exporta los registros de estudiantes.'}
                         </p>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                         <button onClick={downloadAllPDFs} className="btn-primary" style={{ padding: '12px 24px', fontSize: '0.9rem', boxShadow: 'var(--shadow-lg)' }}>
                             📄 Descargar Fichas (PDF)
                         </button>
                         <button onClick={downloadCSV} className="btn-secondary" style={{ padding: '12px 24px', fontSize: '0.9rem', background: '#fff' }}>
                             📥 Exportar CSV
+                        </button>
+                        <button onClick={downloadContactsCSV} className="btn-secondary" style={{ padding: '12px 24px', fontSize: '0.9rem', background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}>
+                            📞 Exportar Contactos
                         </button>
                     </div>
                 </div>
@@ -749,6 +836,7 @@ const AdminPanel = () => {
                                             <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Estudiante</th>
                                             <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>ID & Estado</th>
                                             <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Curso</th>
+                                            <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Email</th>
                                             <th style={{ padding: '16px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Contacto</th>
                                             <th style={{ padding: '16px', textAlign: 'right', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Acciones</th>
                                         </tr>
@@ -791,6 +879,9 @@ const AdminPanel = () => {
                                                         }}>
                                                             {item.grade} <span style={{ color: 'var(--color-secondary)' }}>"{item.parallel}"</span>
                                                         </span>
+                                                    </td>
+                                                    <td style={{ padding: '12px 16px', color: 'var(--color-text-light)', fontSize: '0.8rem' }}>
+                                                        {item.guardianEmail || '-'}
                                                     </td>
                                                     <td style={{ padding: '12px 16px' }}>
                                                         <div style={{ fontSize: '0.85rem' }}>{item.guardianPhone}</div>
@@ -848,7 +939,7 @@ const AdminPanel = () => {
                         zIndex: 1000, backdropFilter: 'blur(4px)', padding: '20px'
                     }} onClick={() => setSelectedRecord(null)}>
                         <div style={{
-                            background: '#fff', width: '100%', maxWidth: '700px', borderRadius: '24px',
+                            background: '#fff', width: '100%', maxWidth: '800px', borderRadius: '24px',
                             boxShadow: 'var(--shadow-soft)', overflow: 'hidden',
                             maxHeight: '90vh', display: 'flex', flexDirection: 'column',
                             animation: 'fadeIn 0.2s ease-out'
@@ -904,6 +995,10 @@ const AdminPanel = () => {
                                                 <span style={{ textAlign: 'right' }}>{selectedRecord.guardianName}</span>
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-soft)', paddingBottom: '4px' }}>
+                                                <span style={{ color: 'var(--color-text-muted)' }}>Email</span>
+                                                <span style={{ fontFamily: 'var(--font-mono)' }}>{selectedRecord.guardianEmail || '-'}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed var(--border-soft)', paddingBottom: '4px' }}>
                                                 <span style={{ color: 'var(--color-text-muted)' }}>Parentesco</span>
                                                 <span>{selectedRecord.guardianRelation}</span>
                                             </div>
@@ -945,6 +1040,46 @@ const AdminPanel = () => {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* NEW: Legal & Signature Section */}
+                                <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px dashed var(--border-soft)' }}>
+                                    <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--color-text-light)', letterSpacing: '0.1em', marginBottom: '16px', fontWeight: 700 }}>Legal y Autorizaciones</h4>
+
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '32px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                                                <span style={{ color: selectedRecord.acceptedRules ? '#059669' : '#9CA3AF' }}>{selectedRecord.acceptedRules ? '✅' : '⬜'}</span>
+                                                <span style={{ color: selectedRecord.acceptedRules ? 'var(--color-text)' : 'var(--color-text-muted)' }}>Normas de Convivencia</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                                                <span style={{ color: selectedRecord.acceptedLiability ? '#059669' : '#9CA3AF' }}>{selectedRecord.acceptedLiability ? '✅' : '⬜'}</span>
+                                                <span style={{ color: selectedRecord.acceptedLiability ? 'var(--color-text)' : 'var(--color-text-muted)' }}>Exoneración de Responsabilidad</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                                                <span style={{ color: selectedRecord.acceptedMedia ? '#059669' : '#9CA3AF' }}>{selectedRecord.acceptedMedia ? '✅' : '⬜'}</span>
+                                                <span style={{ color: selectedRecord.acceptedMedia ? 'var(--color-text)' : 'var(--color-text-muted)' }}>Uso de Imagen</span>
+                                            </div>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
+                                                <span style={{ color: selectedRecord.habeasData ? '#059669' : '#9CA3AF' }}>{selectedRecord.habeasData ? '✅' : '⬜'}</span>
+                                                <span style={{ color: selectedRecord.habeasData ? 'var(--color-text)' : 'var(--color-text-muted)' }}>Hábeas Data</span>
+                                            </div>
+                                        </div>
+
+                                        <div style={{ textAlign: 'center' }}>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '8px' }}>Firma Digital</div>
+                                            {selectedRecord.signature ? (
+                                                <div style={{ padding: '8px', border: '1px dashed var(--border-soft)', borderRadius: '8px', background: '#F9FAFB' }}>
+                                                    <img src={selectedRecord.signature} alt="Firma" style={{ maxWidth: '120px', maxHeight: '60px' }} />
+                                                </div>
+                                            ) : (
+                                                <div style={{ padding: '20px', border: '1px dashed var(--border-soft)', borderRadius: '8px', background: '#F9FAFB', color: '#9CA3AF', fontSize: '0.8rem' }}>
+                                                    Sin Firma
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
                             </div>
 
                             {/* Modal Footer */}

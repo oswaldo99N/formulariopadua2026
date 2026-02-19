@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import emailjs from '@emailjs/browser';
 import { db, collection, addDoc, serverTimestamp } from '../../services/firebase';
+import { getConfirmationEmailHTML } from '../../utils/emailTemplates';
 
 const IconArrowLeft = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -127,12 +129,31 @@ const Step6_Summary = ({ data, onBack }) => {
         setIsSubmitting(true);
 
         try {
-            // Guardar en Firestore
+            // 1. Guardar en Firestore
             await addDoc(collection(db, "registros"), {
                 ...data,
                 createdAt: serverTimestamp(),
                 userAgent: navigator.userAgent
             });
+
+
+
+            // Inside handleSubmit:
+            // 2. Enviar Correo (EmailJS)
+            if (data.guardianEmail) {
+                const templateParams = {
+                    to_email: data.guardianEmail,
+                    to_name: data.guardianName,
+                    student_name: data.studentName,
+                    message: `¡Hola ${data.guardianName}! Tu representado ${data.studentName} ha sido inscrito exitosamente en el Retiro Espiritual.`,
+                    html_message: getConfirmationEmailHTML(data), // NEW: HTML Content
+                    reply_to: 'metanoiiaec@gmail.com',
+                };
+
+                // NOTE: Replace PUBLIC_KEY with your actual public key
+                await emailjs.send('service_a29qagj', 'template_anwz2rc', templateParams, 'cyFaYsemWSPVWLP6M');
+                console.log("Correo enviado a:", data.guardianEmail);
+            }
 
             // Mostrar vista de éxito
             setIsSuccess(true);

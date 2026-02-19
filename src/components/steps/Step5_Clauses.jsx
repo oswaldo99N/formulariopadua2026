@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import SignatureCanvas from 'react-signature-canvas';
 
 const IconArrowRight = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -82,6 +83,12 @@ const BASE_PACKING_LIST = [
 ];
 
 const Step5_Clauses = ({ data, updateData, onNext, onBack }) => {
+    const sigCanvas = useRef({});
+    const clearSignature = () => {
+        sigCanvas.current.clear();
+        updateData({ signature: null });
+    };
+
     const rulesActive = data.acceptedRules === true;
     const legalActive = data.acceptedLiability === true && data.acceptedMedia === true;
 
@@ -186,17 +193,71 @@ const Step5_Clauses = ({ data, updateData, onNext, onBack }) => {
                     </div>
                 </FeatureCard>
 
+                {/* 4. DIGITAL SIGNATURE */}
+                <FeatureCard icon={<IconScale />} title="Firma de Compromiso" active={data.signature}>
+                    <p style={{ marginBottom: '1rem', fontSize: '0.9rem' }}>
+                        Yo, {data.guardianName || 'el representante'}, declaro haber leído y aceptado todos los términos anteriores.
+                    </p>
+
+                    <div style={{ border: '1px dashed var(--border-soft)', borderRadius: '12px', background: '#FAFAFA', overflow: 'hidden', position: 'relative', touchAction: 'none' }}>
+                        <SignatureCanvas
+                            penColor="black"
+                            canvasProps={{
+                                className: 'sigCanvas',
+                                style: { width: '100%', height: '160px', display: 'block' }
+                            }}
+                            ref={(ref) => { sigCanvas.current = ref; }}
+                            onEnd={() => updateData({ signature: sigCanvas.current.toDataURL() })}
+                        />
+                        <div style={{ position: 'absolute', top: '8px', right: '8px', display: 'flex', gap: '8px' }}>
+                            <span style={{ fontSize: '0.6rem', color: '#999', pointerEvents: 'none', alignSelf: 'center' }}>
+                                (Firma aquí)
+                            </span>
+                            <button
+                                onClick={clearSignature}
+                                style={{ padding: '4px 8px', fontSize: '0.7rem', background: '#fff', border: '1px solid #ddd', borderRadius: '6px', cursor: 'pointer' }}
+                            >
+                                Borrar
+                            </button>
+                        </div>
+                    </div>
+                </FeatureCard>
+
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '3.5rem', marginLeft: '0.5rem', marginRight: '0.5rem' }}>
+            <div
+                onClick={() => updateData({ habeasData: !data.habeasData })}
+                style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '12px', marginTop: '2rem', padding: '16px',
+                    background: data.habeasData ? 'rgba(0,137,123,0.08)' : 'rgba(59,35,20,0.03)',
+                    border: `1.5px solid ${data.habeasData ? 'var(--color-metanoiia-teal)' : 'rgba(0,0,0,0.1)'}`,
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                }}>
+                <div style={{
+                    width: '24px', height: '24px', borderRadius: '6px', flexShrink: 0,
+                    border: `2px solid ${data.habeasData ? 'var(--color-metanoiia-teal)' : '#ccc'}`,
+                    background: data.habeasData ? 'var(--color-metanoiia-teal)' : '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginTop: '2px', transition: 'all 0.2s ease'
+                }}>
+                    {data.habeasData && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                </div>
+                <label style={{ fontSize: '0.9rem', color: data.habeasData ? 'var(--color-primary)' : 'var(--color-text-muted)', lineHeight: '1.4', cursor: 'pointer', flex: 1, userSelect: 'none' }}>
+                    Acepto la <strong>Política de Tratamiento de Datos</strong> (Habeas Data) y autorizo el uso de la información para fines del retiro.
+                </label>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2rem', marginLeft: '0.5rem', marginRight: '0.5rem' }}>
                 <button className="btn-secondary" onClick={onBack}>
                     <IconArrowLeft /> Atrás
                 </button>
                 <button
                     className="btn-primary"
                     onClick={onNext}
-                    disabled={!canProceed}
-                    style={{ opacity: !canProceed ? 0.5 : 1, filter: !canProceed ? 'grayscale(0.8)' : 'none' }}
+                    disabled={!canProceed || !data.signature || !data.habeasData}
+                    style={{ opacity: (!canProceed || !data.signature || !data.habeasData) ? 0.5 : 1, filter: (!canProceed || !data.signature || !data.habeasData) ? 'grayscale(0.8)' : 'none' }}
                 >
                     Siguiente <IconArrowRight />
                 </button>
