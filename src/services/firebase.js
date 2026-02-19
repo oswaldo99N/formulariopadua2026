@@ -1,5 +1,14 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+    getFirestore,
+    collection,
+    addDoc,
+    getDocs,
+    query,
+    orderBy,
+    where,
+    serverTimestamp
+} from "firebase/firestore";
 // import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -17,4 +26,4 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 // const analytics = getAnalytics(app); 
 
-export { db, collection, addDoc, serverTimestamp };
+export { db, collection, addDoc, getDocs, query, orderBy, where, serverTimestamp };

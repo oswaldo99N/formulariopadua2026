@@ -65,7 +65,7 @@ const TOTAL_STEPS = 6;
 /* ══════════════════════════════════════════════════════════
    PASO 1 — Bienvenida
 ═══════════════════════════════════════════════════════════ */
-const Step1_Welcome = ({ onNext, setRetreatType }) => (
+const Step1_Welcome = ({ onNext, setRetreatType, updateData }) => (
     <div className="animate-fade-in" style={{ textAlign: 'center' }}>
 
         {/* Decorative divider */}
@@ -95,14 +95,14 @@ const Step1_Welcome = ({ onNext, setRetreatType }) => (
         <div style={{ display: 'grid', gap: '14px', maxWidth: '380px', margin: '0 auto' }}>
             <button
                 className="btn-retreat btn-retreat-women"
-                onClick={() => { setRetreatType('women'); onNext(); }}
+                onClick={() => { setRetreatType('women'); updateData({ gender: 'Femenino' }); onNext(); }}
             >
                 <IconWoman />
                 <span>Retiro de Mujeres</span>
             </button>
             <button
                 className="btn-retreat btn-retreat-men"
-                onClick={() => { setRetreatType('men'); onNext(); }}
+                onClick={() => { setRetreatType('men'); updateData({ gender: 'Masculino' }); onNext(); }}
             >
                 <IconMan />
                 <span>Retiro de Hombres</span>
@@ -138,9 +138,9 @@ const Step2_StudentData = ({ data, updateData, onNext, onBack }) => {
     };
 
     const handleNext = () => {
-        const { studentName, age, idCard, grade, parallel } = data;
+        const { studentName, age, idCard, grade, parallel, gender } = data;
 
-        if (!studentName?.trim() || !age || !idCard || !grade || !parallel) {
+        if (!studentName?.trim() || !age || !idCard || !grade || !parallel || !gender) {
             alert("Por favor complete todos los campos obligatorios (incluyendo Paralelo).");
             return;
         }
@@ -247,74 +247,14 @@ export default function WizardForm() {
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({});
     const [retreatType, setRetreatType] = useState(null);
-    const [isPrintMode, setIsPrintMode] = useState(false);
 
     const updateData = (newData) => setFormData(prev => ({ ...prev, ...newData }));
     const nextStep = () => setStep(prev => prev + 1);
     const prevStep = () => setStep(prev => prev - 1);
 
-    /* ── Print Mode ──────────────────────────────────────── */
-    if (isPrintMode) {
-        return (
-            <div style={{ background: 'white', minHeight: '100vh', padding: '40px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }} className="no-print">
-                    <button onClick={() => window.print()} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <IconPrint /> Guardar como PDF / Imprimir
-                    </button>
-                    <button onClick={() => setIsPrintMode(false)} className="btn-secondary">
-                        <IconCross /> Volver al Formulario
-                    </button>
-                </div>
-
-                {/* Physical Header */}
-                <div style={{ textAlign: 'center', marginBottom: '40px', borderBottom: '2px solid #333', paddingBottom: '20px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '40px', marginBottom: '20px' }}>
-                        <img src="/src/assets/images/logo_padua.jpg" alt="San Antonio de Padua" style={{ height: '80px' }} />
-                        <img src="/src/assets/images/logo_metanoiia.png" alt="Metanoiia" style={{ height: '80px' }} />
-                    </div>
-                    <h1 style={{ color: '#3B2314', fontSize: '22px', fontFamily: 'var(--font-heading)', fontWeight: 800, textTransform: 'uppercase' }}>
-                        FICHA DE INSCRIPCIÓN — RETIRO ESPIRITUAL
-                    </h1>
-                    <h2 style={{ fontSize: '16px', color: '#666', fontWeight: 600, fontFamily: 'var(--font-heading)', textTransform: 'uppercase' }}>
-                        Colegio San Antonio de Padua · Metanoiia Corporation S.A.S.
-                    </h2>
-                </div>
-
-                <div className="step-container">
-                    <h3 style={{ borderBottom: '1px solid #ccc', marginBottom: '15px', paddingBottom: '8px', fontFamily: 'var(--font-heading)', textTransform: 'uppercase' }}>1. Datos del Estudiante</h3>
-                    <Step2_StudentData data={formData} updateData={updateData} onNext={() => { }} onBack={() => { }} />
-                </div>
-                <div className="step-container">
-                    <h3 style={{ borderBottom: '1px solid #ccc', marginBottom: '15px', paddingBottom: '8px', fontFamily: 'var(--font-heading)', textTransform: 'uppercase' }}>2. Datos del Representante</h3>
-                    <Step3_GuardianData data={formData} updateData={updateData} onNext={() => { }} onBack={() => { }} />
-                </div>
-                <div className="step-container">
-                    <h3 style={{ borderBottom: '1px solid #ccc', marginBottom: '15px', paddingBottom: '8px', fontFamily: 'var(--font-heading)', textTransform: 'uppercase' }}>3. Ficha Médica</h3>
-                    <Step4_Medical data={formData} updateData={updateData} onNext={() => { }} onBack={() => { }} />
-                </div>
-                <div className="step-container">
-                    <h3 style={{ borderBottom: '1px solid #ccc', marginBottom: '15px', paddingBottom: '8px', fontFamily: 'var(--font-heading)', textTransform: 'uppercase' }}>4. Compromiso y Firmas</h3>
-                    <Step5_Clauses data={formData} updateData={updateData} onNext={() => { }} onBack={() => { }} />
-                </div>
-                <div style={{ marginTop: '60px', display: 'flex', justifyContent: 'space-around', textAlign: 'center' }}>
-                    <div style={{ borderTop: '1px solid black', width: '200px', paddingTop: '10px', fontSize: '12px' }}>Firma del Estudiante</div>
-                    <div style={{ borderTop: '1px solid black', width: '200px', paddingTop: '10px', fontSize: '12px' }}>Firma del Representante</div>
-                </div>
-            </div>
-        );
-    }
-
     /* ── Normal Wizard ───────────────────────────────────── */
     return (
         <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
-
-            {/* PDF Float Button */}
-            <button
-                className="btn-print-toggle"
-                onClick={() => setIsPrintMode(true)}
-            >
-                <IconPrint /> Ver Formulario PDF
-            </button>
 
             {/* Main Glass Card */}
             <div className="glass-panel" style={{ padding: '52px 56px' }}>
@@ -412,7 +352,7 @@ export default function WizardForm() {
                 </div>
 
                 {/* ── Step Content ── */}
-                {step === 1 && <Step1_Welcome onNext={nextStep} setRetreatType={setRetreatType} />}
+                {step === 1 && <Step1_Welcome onNext={nextStep} setRetreatType={setRetreatType} updateData={updateData} />}
                 {step === 2 && <Step2_StudentData data={formData} updateData={updateData} onNext={nextStep} onBack={prevStep} />}
                 {step === 3 && <Step3_GuardianData data={formData} updateData={updateData} onNext={nextStep} onBack={prevStep} />}
                 {step === 4 && <Step4_Medical data={formData} updateData={updateData} onNext={nextStep} onBack={prevStep} />}

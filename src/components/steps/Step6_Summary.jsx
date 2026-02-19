@@ -20,6 +20,26 @@ const CheckIcon = () => (
     </svg>
 );
 
+const IconFacebook = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
+    </svg>
+);
+
+const IconInstagram = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+    </svg>
+);
+
+const IconTikTok = () => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"></path>
+    </svg>
+);
+
 const Row = ({ label, value }) => (
     <div className="summary-row">
         <span className="summary-label">{label}</span>
@@ -41,10 +61,66 @@ const SectionTitle = ({ children }) => (
     </div>
 );
 
+const SuccessView = () => (
+    <div className="animate-fade-in" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+        <div style={{
+            width: '80px', height: '80px', margin: '0 auto 1.5rem',
+            background: 'rgba(0,137,123,0.1)', borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--color-metanoiia-teal)'
+        }}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+            </svg>
+        </div>
 
+        <h2 style={{ fontSize: '2rem', color: 'var(--color-primary)', marginBottom: '0.5rem' }}>
+            ¡Gracias por confiar en nosotros!
+        </h2>
+
+        <p style={{ fontSize: '1.1rem', color: 'var(--color-text-muted)', marginBottom: '2.5rem', maxWidth: '400px', marginInline: 'auto' }}>
+            Más de 7 años de experiencia transformando vidas a través de retiros espirituales.
+        </p>
+
+        <div style={{ marginBottom: '2.5rem' }}>
+            <p style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--color-padua-gold)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '1rem' }}>
+                Síguenos en nuestras redes
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem' }}>
+                <a href="https://www.facebook.com/metanoiiaec" target="_blank" rel="noopener noreferrer"
+                    style={{ color: '#1877F2', padding: '10px', background: '#F0F9FF', borderRadius: '12px', transition: 'transform 0.2s' }}
+                    className="social-icon">
+                    <IconFacebook />
+                </a>
+                <a href="https://www.instagram.com/metanoiiaec" target="_blank" rel="noopener noreferrer"
+                    style={{ color: '#E4405F', padding: '10px', background: '#FFF0F5', borderRadius: '12px', transition: 'transform 0.2s' }}
+                    className="social-icon">
+                    <IconInstagram />
+                </a>
+                <a href="https://www.tiktok.com/@metanoiiaec" target="_blank" rel="noopener noreferrer"
+                    style={{ color: '#000000', padding: '10px', background: '#F5F5F5', borderRadius: '12px', transition: 'transform 0.2s' }}
+                    className="social-icon">
+                    <IconTikTok />
+                </a>
+            </div>
+            <p style={{ marginTop: '0.8rem', fontSize: '0.9rem', color: 'var(--color-text-light)' }}>
+                @metanoiiaec
+            </p>
+        </div>
+
+        <button
+            className="btn-primary"
+            onClick={() => window.location.reload()}
+            style={{ width: '100%', maxWidth: '300px' }}
+        >
+            Volver al Inicio
+        </button>
+    </div>
+);
 
 const Step6_Summary = ({ data, onBack }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     const handleSubmit = async () => {
         if (isSubmitting) return;
@@ -58,10 +134,8 @@ const Step6_Summary = ({ data, onBack }) => {
                 userAgent: navigator.userAgent
             });
 
-            alert('¡INSCRIPCIÓN ÉXITOSA!\n\nSe ha registrado correctamente la información del retiro espiritual. Gracias por ser parte de esta experiencia.');
-
-            // Recargar para limpiar el formulario (simple reset)
-            window.location.reload();
+            // Mostrar vista de éxito
+            setIsSuccess(true);
 
         } catch (error) {
             console.error("Error al guardar:", error);
@@ -69,6 +143,10 @@ const Step6_Summary = ({ data, onBack }) => {
             setIsSubmitting(false);
         }
     };
+
+    if (isSuccess) {
+        return <SuccessView />;
+    }
 
     return (
         <div className="animate-fade-in">
@@ -98,6 +176,7 @@ const Step6_Summary = ({ data, onBack }) => {
             <div className="summary-section">
                 <SectionTitle>Datos Personales</SectionTitle>
                 <Row label="Cédula" value={data.idCard} />
+                <Row label="Género" value={data.gender} />
                 <Row label="Curso" value={data.grade} />
                 <Row label="Paralelo" value={data.parallel} />
                 <Row label="Edad" value={data.age ? `${data.age} años` : null} />
