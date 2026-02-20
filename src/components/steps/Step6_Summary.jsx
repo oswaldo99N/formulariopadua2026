@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import emailjs from '@emailjs/browser';
-import { db, storage, collection, addDoc, serverTimestamp, ref, uploadBytes, getDownloadURL } from '../../services/firebase';
+import { db, collection, addDoc, serverTimestamp } from '../../services/firebase';
 import { getConfirmationEmailHTML } from '../../utils/emailTemplates';
 import { jsPDF } from 'jspdf';
 
@@ -225,13 +225,22 @@ const Step6_Summary = ({ data, onBack }) => {
         doc.setFontSize(7);
         doc.text(`Documento generado el ${new Date().toLocaleDateString()} | Imprimir y firmar físicamente`, 105, 288, null, null, 'center');
 
-        // Upload to Firebase Storage
+        // Upload to Cloudinary (free, unsigned)
         const pdfBlob = doc.output('blob');
-        const filename = `fichas/${data.studentName?.replace(/\s+/g, '_') || 'inscripcion'}_${Date.now()}.pdf`;
-        const storageRef = ref(storage, filename);
-        await uploadBytes(storageRef, pdfBlob, { contentType: 'application/pdf' });
-        const downloadURL = await getDownloadURL(storageRef);
-        return downloadURL;
+        const filename = `${data.studentName?.replace(/\s+/g, '_') || 'inscripcion'}_${Date.now()}`;
+        const formData = new FormData();
+        formData.append('file', pdfBlob, `${filename}.pdf`);
+        formData.append('upload_preset', 'pdfs_retirospadua2026');
+        formData.append('public_id', filename);
+        formData.append('resource_type', 'raw');
+
+        const response = await fetch(
+            'https://api.cloudinary.com/v1_1/dcloohqwvu/raw/upload',
+            { method: 'POST', body: formData }
+        );
+        if (!response.ok) throw new Error(`Cloudinary error: ${response.status}`);
+        const result = await response.json();
+        return result.secure_url;
     };
 
     const handleSubmit = async () => {
