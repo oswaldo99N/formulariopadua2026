@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import emailjs from '@emailjs/browser';
-import { db, collection, addDoc, serverTimestamp } from '../../services/firebase';
+import { db, storage, collection, addDoc, serverTimestamp, ref, uploadBytes, getDownloadURL } from '../../services/firebase';
 import { getConfirmationEmailHTML } from '../../utils/emailTemplates';
+import { jsPDF } from 'jspdf';
 
 const IconArrowLeft = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -124,12 +125,131 @@ const Step6_Summary = ({ data, onBack }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
+    const generateAndUploadPDF = async (data) => {
+        const doc = new jsPDF();
+        const colorPrimary = [59, 35, 20];
+        const colorGold = [201, 168, 76];
+        const colorText = [40, 40, 40];
+        const colorLight = [100, 100, 100];
+
+        // Header
+        doc.setFillColor(...colorPrimary);
+        doc.rect(0, 0, 210, 30, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.text('FICHA DE INSCRIPCIÓN', 105, 11, null, null, 'center');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
+        doc.text('RETIRO ESPIRITUAL - U.E. FISCOMISIONAL SAN ANTONIO DE PADUA & METANOIIA', 105, 19, null, null, 'center');
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('Generado el: ' + new Date().toLocaleString(), 105, 25, null, null, 'center');
+
+        let yPos = 42;
+        doc.setTextColor(...colorText);
+
+        const drawSection = (title) => {
+            doc.setFillColor(...colorGold);
+            doc.rect(15, yPos - 6, 180, 8, 'F');
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(10);
+            doc.setTextColor(255, 255, 255);
+            doc.text(title, 20, yPos);
+            yPos += 12;
+            doc.setTextColor(...colorText);
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'normal');
+        };
+
+        const drawField = (label, value) => {
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${label}:`, 20, yPos);
+            const lw = doc.getTextWidth(`${label}: `);
+            doc.setFont('helvetica', 'normal');
+            const splitText = doc.splitTextToSize(`${value || '-'}`, 170 - lw);
+            doc.text(splitText, 20 + lw, yPos);
+            yPos += (splitText.length * 5) + 4;
+        };
+
+        drawSection('1. DATOS DEL ESTUDIANTE');
+        drawField('Nombre', data.studentName);
+        drawField('Cédula', data.idCard);
+        drawField('Género', data.gender);
+        drawField('Curso', `${data.grade} "${data.parallel || ''}"`);
+        drawField('Edad', `${data.age} años`);
+        yPos += 4;
+
+        drawSection('2. DATOS DEL REPRESENTANTE');
+        drawField('Nombre', data.guardianName);
+        drawField('Parentesco', data.guardianRelation);
+        drawField('Teléfono', data.guardianPhone);
+        drawField('Email', data.guardianEmail);
+        drawField('Contacto de emergencia', data.emergencyPhone || 'No registrado');
+        yPos += 4;
+
+        drawSection('3. INFORMACIÓN MÉDICA');
+        drawField('Tipo de Sangre', data.bloodType || 'No especificado');
+        drawField('Seguro Médico', data.hasInsurance ? `SÍ — ${data.insuranceType} (${data.insuranceDetail})` : 'NO');
+        drawField('Alergias', data.hasAllergies ? `SÍ — ${data.allergiesDetail}` : 'NO');
+        drawField('Medicación', data.hasMedication ? `SÍ — ${data.medicationDetail}` : 'NO');
+        yPos += 4;
+
+        if (yPos > 220) { doc.addPage(); yPos = 30; }
+
+        drawSection('4. COMPROMISO Y AUTORIZACIONES');
+        doc.setFontSize(9);
+        const chk = (v) => v ? '[SI]' : '[NO]';
+        doc.text(`${chk(data.acceptedRules)}  Normas de Convivencia`, 22, yPos); yPos += 8;
+        doc.text(`${chk(data.acceptedLiability)}  Exoneración y Responsabilidad Médica`, 22, yPos); yPos += 8;
+        doc.text(`${chk(data.acceptedMedia)}  Uso de Imagen para Fines Institucionales`, 22, yPos); yPos += 8;
+        doc.text(`${chk(data.habeasData)}  Política de Tratamiento de Datos (Habeas Data)`, 22, yPos); yPos += 16;
+
+        // Signature area
+        yPos = Math.max(yPos, 240);
+        doc.setLineWidth(0.4);
+        doc.line(25, yPos, 90, yPos);
+        doc.line(120, yPos, 185, yPos);
+        yPos += 5;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Firma del Representante', 57, yPos, null, null, 'center');
+        doc.text('Firma del Estudiante', 152, yPos, null, null, 'center');
+        yPos += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(data.guardianName || '', 57, yPos, null, null, 'center');
+        doc.text(data.studentName || '', 152, yPos, null, null, 'center');
+
+        // Footer
+        doc.setTextColor(150);
+        doc.setFontSize(7);
+        doc.text(`Documento generado el ${new Date().toLocaleDateString()} | Imprimir y firmar físicamente`, 105, 288, null, null, 'center');
+
+        // Upload to Firebase Storage
+        const pdfBlob = doc.output('blob');
+        const filename = `fichas/${data.studentName?.replace(/\s+/g, '_') || 'inscripcion'}_${Date.now()}.pdf`;
+        const storageRef = ref(storage, filename);
+        await uploadBytes(storageRef, pdfBlob, { contentType: 'application/pdf' });
+        const downloadURL = await getDownloadURL(storageRef);
+        return downloadURL;
+    };
+
     const handleSubmit = async () => {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
         try {
-            // 1. Guardar en Firestore
+            // 1. Generar PDF y subir a Firebase Storage
+            let pdfURL = null;
+            try {
+                pdfURL = await generateAndUploadPDF(data);
+                console.log('PDF subido:', pdfURL);
+            } catch (pdfErr) {
+                console.error('Error al generar/subir PDF:', pdfErr);
+                // No bloquear si el PDF falla
+            }
+
+            // 2. Guardar en Firestore
             await addDoc(collection(db, "registros"), {
                 ...data,
                 createdAt: serverTimestamp(),
@@ -138,15 +258,14 @@ const Step6_Summary = ({ data, onBack }) => {
 
 
 
-            // Inside handleSubmit:
-            // 2. Enviar Correo (EmailJS)
+            // 3. Enviar Correo (EmailJS)
             if (data.guardianEmail) {
                 const templateParams = {
                     to_email: data.guardianEmail,
                     to_name: data.guardianName,
                     student_name: data.studentName,
                     message: `¡Hola ${data.guardianName}! Tu representado ${data.studentName} ha sido inscrito exitosamente en el Retiro Espiritual.`,
-                    html_message: getConfirmationEmailHTML(data), // NEW: HTML Content
+                    html_message: getConfirmationEmailHTML(data, pdfURL),
                     reply_to: 'metanoiiaec@gmail.com',
                 };
 

@@ -11,6 +11,7 @@ import {
     deleteDoc,
     doc
 } from "firebase/firestore";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 // import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
@@ -26,6 +27,8 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
 // const analytics = getAnalytics(app); 
 
-export { db, collection, addDoc, getDocs, query, orderBy, where, serverTimestamp, deleteDoc, doc };
+export { db, storage, collection, addDoc, getDocs, query, orderBy, where, serverTimestamp, deleteDoc, doc, ref, uploadBytes, getDownloadURL };
+

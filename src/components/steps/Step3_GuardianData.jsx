@@ -110,6 +110,7 @@ const Step3_GuardianData = ({ data, updateData, onNext, onBack }) => {
                         >
                             <option value="">Seleccione...</option>
                             <option value="Padre">Padre</option>
+                            <option value="Papá">Papá</option>
                             <option value="Madre">Madre</option>
                             <option value="Abuelo/a">Abuelo/a</option>
                             <option value="Tío/a">Tío/a</option>

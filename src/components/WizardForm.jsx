@@ -85,7 +85,7 @@ const Step1_Welcome = ({ onNext, setRetreatType, updateData }) => (
 
         <h1 style={{ marginBottom: '0.5rem', fontStyle: 'italic' }}>Retiro Espiritual</h1>
         <p style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--color-padua-gold)', marginBottom: '0.75rem' }}>
-            Colegio San Antonio de Padua
+            Unidad Educativa Fiscomisional San Antonio de Padua
         </p>
         <p style={{ maxWidth: '380px', margin: '0 auto 3rem', fontSize: '1rem', color: 'var(--color-text-muted)', fontStyle: 'italic', fontFamily: 'var(--font-heading)' }}>
             "Descubre, Conecta, Renueva. Un viaje hacia tu interior."
@@ -226,6 +226,7 @@ const Step2_StudentData = ({ data, updateData, onNext, onBack }) => {
                             {['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'].map(p => (
                                 <option key={p} value={p}>{p}</option>
                             ))}
+                            <option value="Técnico">Técnico</option>
                         </select>
                     </div>
                 </div>

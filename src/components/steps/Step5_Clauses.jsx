@@ -160,9 +160,9 @@ const Step5_Clauses = ({ data, updateData, onNext, onBack }) => {
                 {/* 3. LEGAL CARD */}
                 <FeatureCard icon={<IconScale />} title="Legal y Permisos" active={legalActive}>
                     <div className="legal-paper">
-                        <p style={{ marginBottom: '8px' }}><strong>1. Exoneración:</strong> El Colegio no se responsabiliza por pérdidas o accidentes fortuitos.</p>
-                        <p style={{ marginBottom: '8px' }}><strong>2. Emergencias:</strong> Autorizo decisiones médicas urgentes y traslados.</p>
-                        <p><strong>3. Imagen:</strong> Autorizo uso de fotos/videos para fines pastorales.</p>
+                        <p style={{ marginBottom: '8px' }}><strong>1. Exoneración:</strong> La Institución no se responsabiliza por pérdidas o accidentes fortuitos.</p>
+                        <p style={{ marginBottom: '8px' }}><strong>2. Emergencias:</strong> Autorizo decisiones médicas urgentes y traslados necesarios.</p>
+                        <p><strong>3. Imagen:</strong> Autorizo el uso de fotos y videos para fines institucionales y pastorales.</p>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -181,7 +181,7 @@ const Step5_Clauses = ({ data, updateData, onNext, onBack }) => {
 
                         <div className="action-bar" style={{ marginTop: '0.5rem' }}>
                             <div className="action-bar-label">
-                                Uso de Imagen<br />Institucional
+                                Uso de Imagen<br />para Fines Institucionales
                             </div>
                             <StatusBtn
                                 active={data.acceptedMedia || false}

@@ -1,5 +1,5 @@
 
-export const getConfirmationEmailHTML = (data) => {
+export const getConfirmationEmailHTML = (data, pdfURL = null) => {
     return `
 <!DOCTYPE html>
 <html>
@@ -32,7 +32,7 @@ export const getConfirmationEmailHTML = (data) => {
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="logo-text">COLEGIO SAN ANTONIO DE PADUA</div>
+            <div class="logo-text">UNIDAD EDUCATIVA FISCOMISIONAL SAN ANTONIO DE PADUA</div>
             <h2 style="color: #ffffff; margin: 5px 0 0 0; font-weight: normal; font-size: 18px;">& METANOIIA</h2>
         </div>
 
@@ -75,13 +75,24 @@ export const getConfirmationEmailHTML = (data) => {
             </p>
             
             <div style="text-align: center;">
+                ${pdfURL ? `
+                <div style="background-color: #FFF8E1; border: 2px solid #C9A84C; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                    <div style="font-size: 28px; margin-bottom: 8px;">📋</div>
+                    <div style="font-weight: bold; color: #3B2314; font-size: 15px; margin-bottom: 6px;">Tu ficha de inscripción está lista</div>
+                    <div style="font-size: 13px; color: #666; margin-bottom: 14px;">Descarga, imprime y firma físicamente el documento para entregarlo el día del retiro.</div>
+                    <a href="${pdfURL}" style="display: inline-block; background-color: #3B2314; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 10px;">
+                        ⬇️ Descargar Ficha PDF
+                    </a>
+                    <div style="font-size: 11px; color: #999; margin-top: 8px;">El enlace estará disponible por 30 días.</div>
+                </div>
+                ` : ''}
                 <a href="http://metanoiiacorporationsas.com" class="btn">Visitar Sitio Web</a>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="footer">
-            <p>© 2026 Metanoiia Corporation S.A.S. & Colegio San Antonio de Padua</p>
+            <p>© 2026 Metanoiia Corporation S.A.S. & Unidad Educativa Fiscomisional San Antonio de Padua</p>
             <p>Este es un mensaje automático, por favor no responder a este correo.</p>
             <div class="social-links">
                 <a href="https://instagram.com/metanoiiaec" class="social-link">Instagram</a> • 
