@@ -124,6 +124,11 @@ const AdminPanel = () => {
     const [password, setPassword] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+    // Auto-load data when authenticated
+    useEffect(() => {
+        if (isAuthenticated) fetchData();
+    }, [isAuthenticated]);
+
     // Simple Authentication
     const handleLogin = (e) => {
         e.preventDefault();
@@ -497,7 +502,7 @@ const AdminPanel = () => {
     // Statistics Calculation
     const stats = React.useMemo(() => {
         const total = registros.length;
-        if (total === 0) return { total: 0, men: 0, women: 0, velocity: {}, averageAge: 0, byAge: {}, topInsurances: [], bloodTypes: {} };
+        if (total === 0) return { total: 0, men: 0, women: 0, allergies: 0, medication: 0, insurance: 0, velocity: {}, averageAge: 0, byAge: {}, byCourse: {}, topInsurances: [], bloodTypes: {} };
 
         let men = 0, women = 0, allergies = 0, medication = 0, insurance = 0;
         let sumAge = 0;
