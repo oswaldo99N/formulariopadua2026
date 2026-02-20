@@ -3,6 +3,8 @@ import emailjs from '@emailjs/browser';
 import { db, collection, addDoc, serverTimestamp } from '../../services/firebase';
 import { getConfirmationEmailHTML } from '../../utils/emailTemplates';
 import { jsPDF } from 'jspdf';
+import logoPadua from '../../assets/images/logo_padua.jpg';
+import logoMetanoiia from '../../assets/images/logo_metanoiia.png';
 
 const IconArrowLeft = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -127,105 +129,163 @@ const Step6_Summary = ({ data, onBack }) => {
 
     const generateAndUploadPDF = async (data) => {
         const doc = new jsPDF();
-        const colorPrimary = [59, 35, 20];
-        const colorGold = [201, 168, 76];
-        const colorText = [40, 40, 40];
-        const colorLight = [100, 100, 100];
 
-        // Header
-        doc.setFillColor(...colorPrimary);
-        doc.rect(0, 0, 210, 30, 'F');
+        const cPrimary = [59, 35, 20];
+        const cGold = [201, 168, 76];
+        const cText = [40, 40, 40];
+        const cMuted = [110, 110, 110];
+        const cWhite = [255, 255, 255];
+
+        // ── HEADER ────────────────────────────────────────────────
+        doc.setFillColor(...cPrimary);
+        doc.rect(0, 0, 210, 28, 'F');
+
+        // Right panel — gradient café → blanco (8 strips)
+        const strips = 8;
+        const sw = 48 / strips;
+        for (let s = 0; s < strips; s++) {
+            const t = s / (strips - 1);
+            doc.setFillColor(
+                Math.round(59 + (255 - 59) * t),
+                Math.round(35 + (252 - 35) * t),
+                Math.round(20 + (245 - 20) * t)
+            );
+            doc.rect(162 + s * sw, 0, sw + 0.5, 28, 'F');
+        }
+
+        // Gold separator
+        doc.setFillColor(...cGold);
+        doc.rect(0, 28, 210, 1.5, 'F');
+
+        // Logos
+        const loadImg = (src) => new Promise((res, rej) => {
+            const i = new Image(); i.src = src;
+            i.onload = () => res(i); i.onerror = rej;
+        });
+        try {
+            const [imgP, imgM] = await Promise.all([loadImg(logoPadua), loadImg(logoMetanoiia)]);
+            doc.addImage(imgP, 'JPEG', 2, 2, 24, 24);
+            const mW = imgM.naturalWidth || 1, mH = imgM.naturalHeight || 1;
+            const maxW = 44, maxH = 24;
+            let rW = maxW, rH = maxW * mH / mW;
+            if (rH > maxH) { rH = maxH; rW = maxH * mW / mH; }
+            doc.addImage(imgM, 'PNG', 162 + (48 - rW) / 2, (28 - rH) / 2, rW, rH);
+        } catch (e) { /* logos optional */ }
+
+        // Title
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(14);
-        doc.text('FICHA DE INSCRIPCIÓN', 105, 11, null, null, 'center');
+        doc.setTextColor(...cWhite);
+        doc.setFontSize(15);
+        doc.text('FICHA DE INSCRIPCIÓN', 96, 12, null, null, 'center');
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.text('RETIRO ESPIRITUAL - U.E. FISCOMISIONAL SAN ANTONIO DE PADUA & METANOIIA', 105, 19, null, null, 'center');
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.text('Generado el: ' + new Date().toLocaleString(), 105, 25, null, null, 'center');
+        doc.setFontSize(7.5);
+        const sub = doc.splitTextToSize('RETIRO ESPIRITUAL · U.E. FISCOMISIONAL SAN ANTONIO DE PADUA & METANOIIA', 130);
+        doc.text(sub, 96, 20, null, null, 'center');
 
-        let yPos = 42;
-        doc.setTextColor(...colorText);
+        // ── CONTENT ───────────────────────────────────────────────
+        let y = 36;
 
-        const drawSection = (title) => {
-            doc.setFillColor(...colorGold);
-            doc.rect(15, yPos - 6, 180, 8, 'F');
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10);
-            doc.setTextColor(255, 255, 255);
-            doc.text(title, 20, yPos);
-            yPos += 12;
-            doc.setTextColor(...colorText);
-            doc.setFontSize(9);
-            doc.setFont('helvetica', 'normal');
+        const section = (title) => {
+            doc.setFillColor(...cGold);
+            doc.rect(10, y - 5, 190, 7, 'F');
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...cWhite);
+            doc.text(title, 14, y);
+            y += 8;
+            doc.setTextColor(...cText); doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
         };
 
-        const drawField = (label, value) => {
-            doc.setFont('helvetica', 'bold');
-            doc.text(`${label}:`, 20, yPos);
+        const field = (label, value, x, maxW) => {
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(...cText);
             const lw = doc.getTextWidth(`${label}: `);
+            doc.text(`${label}: `, x, y);
             doc.setFont('helvetica', 'normal');
-            const splitText = doc.splitTextToSize(`${value || '-'}`, 170 - lw);
-            doc.text(splitText, 20 + lw, yPos);
-            yPos += (splitText.length * 5) + 4;
+            const lines = doc.splitTextToSize(String(value || '—'), maxW - lw);
+            doc.text(lines, x + lw, y);
+            return lines.length;
         };
 
-        drawSection('1. DATOS DEL ESTUDIANTE');
-        drawField('Nombre', data.studentName);
-        drawField('Cédula', data.idCard);
-        drawField('Género', data.gender);
-        drawField('Curso', `${data.grade} "${data.parallel || ''}"`);
-        drawField('Edad', `${data.age} años`);
-        yPos += 4;
+        const row2 = (lL, lV, rL, rV, h = 6) => {
+            const a = field(lL, lV, 12, 88);
+            const b = field(rL, rV, 110, 88);
+            y += Math.max(a, b) * 4.5 + (h - 4.5);
+        };
+        const row1 = (label, value, h = 6) => {
+            const n = field(label, value, 12, 186);
+            y += n * 4.5 + (h - 4.5);
+        };
+        const check = (v) => v ? '✔ SÍ' : '✘ NO';
 
-        drawSection('2. DATOS DEL REPRESENTANTE');
-        drawField('Nombre', data.guardianName);
-        drawField('Parentesco', data.guardianRelation);
-        drawField('Teléfono', data.guardianPhone);
-        drawField('Email', data.guardianEmail);
-        drawField('Contacto de emergencia', data.emergencyPhone || 'No registrado');
-        yPos += 4;
+        // 1. Estudiante
+        section('1. DATOS DEL ESTUDIANTE');
+        row2('Nombre', data.studentName, 'Cédula', data.idCard);
+        row2('Género', data.gender, 'Edad', `${data.age} años`);
+        row1('Curso', `${data.grade || ''} "${data.parallel || ''}"`);
+        y += 2;
 
-        drawSection('3. INFORMACIÓN MÉDICA');
-        drawField('Tipo de Sangre', data.bloodType || 'No especificado');
-        drawField('Seguro Médico', data.hasInsurance ? `SÍ — ${data.insuranceType} (${data.insuranceDetail})` : 'NO');
-        drawField('Alergias', data.hasAllergies ? `SÍ — ${data.allergiesDetail}` : 'NO');
-        drawField('Medicación', data.hasMedication ? `SÍ — ${data.medicationDetail}` : 'NO');
-        yPos += 4;
+        // 2. Representante
+        section('2. DATOS DEL REPRESENTANTE');
+        row2('Nombre', data.guardianName, 'Parentesco', data.guardianRelation);
+        row2('Teléfono', data.guardianPhone, 'Email', data.guardianEmail || '—');
+        row1('Emergencia', data.emergencyPhone || 'No registrado');
+        y += 2;
 
-        if (yPos > 220) { doc.addPage(); yPos = 30; }
+        // 3. Médica
+        section('3. INFORMACIÓN MÉDICA');
+        row2('Tipo de Sangre', data.bloodType || 'No especificado',
+            'Seguro Médico', data.hasInsurance ? `SÍ — ${data.insuranceType || ''}` : 'NO');
+        if (data.hasInsurance) row1('Detalle Seguro', `${data.insuranceDetail || ''} · Tel: ${data.insuranceNumber || ''}`);
+        row2('Alergias', data.hasAllergies ? `SÍ — ${data.allergiesDetail || ''}` : 'NO',
+            'Medicación', data.hasMedication ? `SÍ — ${data.medicationDetail || ''}` : 'NO');
+        y += 2;
 
-        drawSection('4. COMPROMISO Y AUTORIZACIONES');
-        doc.setFontSize(9);
-        const chk = (v) => v ? '[SI]' : '[NO]';
-        doc.text(`${chk(data.acceptedRules)}  Normas de Convivencia`, 22, yPos); yPos += 8;
-        doc.text(`${chk(data.acceptedLiability)}  Exoneración y Responsabilidad Médica`, 22, yPos); yPos += 8;
-        doc.text(`${chk(data.acceptedMedia)}  Uso de Imagen para Fines Institucionales`, 22, yPos); yPos += 8;
-        doc.text(`${chk(data.habeasData)}  Política de Tratamiento de Datos (Habeas Data)`, 22, yPos); yPos += 16;
+        // 4. Autorizaciones
+        if (y > 210) { doc.addPage(); y = 20; }
+        section('4. COMPROMISOS Y AUTORIZACIONES');
+        doc.setFontSize(8.5);
 
-        // Signature area
-        yPos = Math.max(yPos, 240);
-        doc.setLineWidth(0.4);
-        doc.line(25, yPos, 90, yPos);
-        doc.line(120, yPos, 185, yPos);
-        yPos += 5;
+        const auth = (label, val, desc) => {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...(val ? [5, 100, 60] : [160, 30, 30]));
+            doc.text(`${check(val)}  ${label}`, 14, y);
+            doc.setFont('helvetica', 'normal'); doc.setTextColor(...cMuted);
+            doc.text(desc, 18, y + 4);
+            doc.setTextColor(...cText);
+            y += 10;
+        };
+        auth('Normas de Convivencia', data.acceptedRules,
+            'El estudiante y representante aceptan el reglamento del retiro.');
+        auth('Exoneración y Responsabilidad Médica', data.acceptedLiability,
+            'Autorizan atención médica de urgencia y exoneran de responsabilidad por pérdidas.');
+        auth('Uso de Imagen para Fines Institucionales', data.acceptedMedia,
+            'Autorizan el uso de fotografías y videos para fines pastorales e institucionales.');
+        auth('Política de Tratamiento de Datos (Habeas Data)', data.habeasData,
+            'Aceptan el tratamiento de la información para fines del retiro.');
+
+        // ── FIRMAS ───────────────────────────────────────────────
+        if (y > 250) { doc.addPage(); y = 30; }
+        y = Math.max(y, 240);
+        doc.setFontSize(9); doc.setTextColor(...cText);
+        doc.setDrawColor(...cPrimary); doc.setLineWidth(0.4);
+        doc.line(20, y, 90, y);
+        doc.line(120, y, 190, y);
+        y += 4;
         doc.setFont('helvetica', 'bold');
-        doc.text('Firma del Representante', 57, yPos, null, null, 'center');
-        doc.text('Firma del Estudiante', 152, yPos, null, null, 'center');
-        yPos += 5;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
-        doc.text(data.guardianName || '', 57, yPos, null, null, 'center');
-        doc.text(data.studentName || '', 152, yPos, null, null, 'center');
+        doc.text('Firma del Representante', 55, y, null, null, 'center');
+        doc.text('Firma del Estudiante', 155, y, null, null, 'center');
+        y += 4;
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...cMuted);
+        doc.text(data.guardianName || '', 55, y, null, null, 'center');
+        doc.text(data.studentName || '', 155, y, null, null, 'center');
 
-        // Footer
-        doc.setTextColor(150);
-        doc.setFontSize(7);
-        doc.text(`Documento generado el ${new Date().toLocaleDateString()} | Imprimir y firmar físicamente`, 105, 288, null, null, 'center');
+        // ── FOOTER ───────────────────────────────────────────────
+        doc.setFontSize(7); doc.setTextColor(170);
+        const pages = doc.internal.getNumberOfPages();
+        for (let p = 1; p <= pages; p++) {
+            doc.setPage(p);
+            doc.text(`Generado el ${new Date().toLocaleString()} · U.E. Fiscomisional San Antonio de Padua & Metanoiia · Pág ${p}/${pages}`, 105, 292, null, null, 'center');
+        }
 
-        // Upload to Cloudinary (free, unsigned)
+        // ── CLOUDINARY UPLOAD ─────────────────────────────────────
         const pdfBlob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
         const filename = `${data.studentName?.replace(/\s+/g, '_') || 'inscripcion'}_${Date.now()}`;
         const formData = new FormData();
