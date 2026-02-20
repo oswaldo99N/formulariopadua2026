@@ -206,7 +206,7 @@ const AdminPanel = () => {
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
-        doc.text("RETIRO ESPIRITUAL - COLEGIO SAN ANTONIO DE PADUA & METANOIIA", 105, 20, null, null, "center");
+        doc.text("RETIRO ESPIRITUAL - U.E. FISCOMISIONAL SAN ANTONIO DE PADUA & METANOIIA", 105, 20, null, null, "center");
 
         let yPos = 45; // Start Y position
 

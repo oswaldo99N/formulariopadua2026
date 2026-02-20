@@ -286,12 +286,12 @@ export default function WizardForm() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             flexShrink: 0
                         }}>
-                            <img src={logoPadua} alt="Colegio San Antonio de Padua"
+                            <img src={logoPadua} alt="Unidad Educativa Fiscomisional San Antonio de Padua"
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div>
-                            <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-padua-gold)' }}>
-                                Colegio
+                            <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--color-padua-gold)' }}>
+                                U.E. Fiscomisional
                             </div>
                             <div style={{ fontSize: '0.9rem', fontFamily: 'var(--font-heading)', fontWeight: 600, color: 'var(--color-primary)', lineHeight: 1.2 }}>
                                 San Antonio<br />de Padua
