@@ -185,9 +185,12 @@ const AdminPanel = () => {
         doc.setFillColor(...cPrimary);
         doc.rect(0, 0, 210, 28, 'F');
 
-        // Right panel (diffused dark overlay for Metanoiia logo)
-        doc.setFillColor(80, 52, 30);   // slightly lighter brown = "diffused"
-        doc.rect(162, 0, 48, 28, 'F');
+        // Right panel — gradient diffusion (lightest on left edge → dark on right)
+        // Simulated with 4 stacked vertical strips
+        doc.setFillColor(105, 68, 40); doc.rect(162, 0, 12, 28, 'F');
+        doc.setFillColor(90, 58, 33); doc.rect(174, 0, 12, 28, 'F');
+        doc.setFillColor(76, 48, 28); doc.rect(186, 0, 12, 28, 'F');
+        doc.setFillColor(62, 38, 20); doc.rect(198, 0, 12, 28, 'F');
 
         // Gold separator line
         doc.setFillColor(...cGold);
@@ -200,8 +203,17 @@ const AdminPanel = () => {
         });
         try {
             const [imgPadua, imgMeta] = await Promise.all([loadImg(logoPadua), loadImg(logoMetanoiia)]);
-            doc.addImage(imgPadua, 'JPEG', 3, 1, 24, 24);  // left zone
-            doc.addImage(imgMeta, 'PNG', 166, 2, 40, 24);  // right zone (on diffused panel)
+            doc.addImage(imgPadua, 'JPEG', 3, 2, 23, 23);      // left zone — square ratio
+            // Metanoiia: detect natural ratio and render proportionally, centered vertically
+            const mW = imgMeta.naturalWidth || imgMeta.width || 1;
+            const mH = imgMeta.naturalHeight || imgMeta.height || 1;
+            const maxH = 22;
+            const maxW = 36;
+            let rW = maxW, rH = maxW * mH / mW;
+            if (rH > maxH) { rH = maxH; rW = maxH * mW / mH; }
+            const mX = 162 + (48 - rW) / 2;   // center in right zone
+            const mY = (28 - rH) / 2;           // center vertically
+            doc.addImage(imgMeta, 'PNG', mX, mY, rW, rH);
         } catch (e) { /* logos optional */ }
 
         // Title — center zone only (cols 28–162)
