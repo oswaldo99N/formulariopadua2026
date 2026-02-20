@@ -239,14 +239,13 @@ const Step6_Summary = ({ data, onBack }) => {
         setIsSubmitting(true);
 
         try {
-            // 1. Generar PDF y subir a Firebase Storage
+            // 1. Generar PDF y subir a Firebase Storage (optional, no bloquea)
             let pdfURL = null;
             try {
                 pdfURL = await generateAndUploadPDF(data);
-                console.log('PDF subido:', pdfURL);
+                console.log('✅ PDF subido:', pdfURL);
             } catch (pdfErr) {
-                console.error('Error al generar/subir PDF:', pdfErr);
-                // No bloquear si el PDF falla
+                console.warn('⚠️ PDF no se pudo subir (continúa sin PDF):', pdfErr.message);
             }
 
             // 2. Guardar en Firestore
@@ -255,31 +254,33 @@ const Step6_Summary = ({ data, onBack }) => {
                 createdAt: serverTimestamp(),
                 userAgent: navigator.userAgent
             });
+            console.log('✅ Registro guardado en Firestore');
 
-
-
-            // 3. Enviar Correo (EmailJS)
+            // 3. Enviar correo (opcional, no bloquea el éxito)
             if (data.guardianEmail) {
-                const templateParams = {
-                    to_email: data.guardianEmail,
-                    to_name: data.guardianName,
-                    student_name: data.studentName,
-                    message: `¡Hola ${data.guardianName}! Tu representado ${data.studentName} ha sido inscrito exitosamente en el Retiro Espiritual.`,
-                    html_message: getConfirmationEmailHTML(data, pdfURL),
-                    reply_to: 'metanoiiaec@gmail.com',
-                };
-
-                // NOTE: Replace PUBLIC_KEY with your actual public key
-                await emailjs.send('service_a29qagj', 'template_anwz2rc', templateParams, 'cyFaYsemWSPVWLP6M');
-                console.log("Correo enviado a:", data.guardianEmail);
+                try {
+                    const templateParams = {
+                        to_email: data.guardianEmail,
+                        to_name: data.guardianName,
+                        student_name: data.studentName,
+                        message: `¡Hola ${data.guardianName}! Tu representado ${data.studentName} ha sido inscrito exitosamente.`,
+                        html_message: getConfirmationEmailHTML(data, pdfURL),
+                        reply_to: 'metanoiiaec@gmail.com',
+                    };
+                    await emailjs.send('service_a29qagj', 'template_anwz2rc', templateParams, 'cyFaYsemWSPVWLP6M');
+                    console.log('✅ Correo enviado a:', data.guardianEmail);
+                } catch (mailErr) {
+                    console.warn('⚠️ Correo no se pudo enviar (inscripción registrada igual):', mailErr.message);
+                }
             }
 
             // Mostrar vista de éxito
             setIsSuccess(true);
 
         } catch (error) {
-            console.error("Error al guardar:", error);
+            console.error('❌ Error crítico al guardar:', error);
             alert('Hubo un error al conectar con el servidor. Por favor, verifica tu conexión e inténtalo de nuevo.');
+        } finally {
             setIsSubmitting(false);
         }
     };
