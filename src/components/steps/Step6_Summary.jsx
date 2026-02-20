@@ -233,6 +233,8 @@ const Step6_Summary = ({ data, onBack }) => {
         formData.append('upload_preset', 'pdfs_retirospadua2026');
         formData.append('public_id', filename);
         formData.append('resource_type', 'raw');
+        formData.append('access_mode', 'public');
+        formData.append('type', 'upload');
 
         const response = await fetch(
             'https://api.cloudinary.com/v1_1/dc1oohqwu/raw/upload',
