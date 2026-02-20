@@ -226,7 +226,7 @@ const Step6_Summary = ({ data, onBack }) => {
         doc.text(`Documento generado el ${new Date().toLocaleDateString()} | Imprimir y firmar físicamente`, 105, 288, null, null, 'center');
 
         // Upload to Cloudinary (free, unsigned)
-        const pdfBlob = doc.output('blob');
+        const pdfBlob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
         const filename = `${data.studentName?.replace(/\s+/g, '_') || 'inscripcion'}_${Date.now()}`;
         const formData = new FormData();
         formData.append('file', pdfBlob, `${filename}.pdf`);
@@ -239,7 +239,9 @@ const Step6_Summary = ({ data, onBack }) => {
         );
         if (!response.ok) throw new Error(`Cloudinary error: ${response.status}`);
         const result = await response.json();
-        return result.secure_url;
+        // Add fl_attachment so the link forces download instead of inline render
+        const downloadUrl = result.secure_url.replace('/raw/upload/', '/raw/upload/fl_attachment/');
+        return downloadUrl;
     };
 
     const handleSubmit = async () => {
