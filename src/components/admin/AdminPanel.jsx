@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, collection, getDocs, orderBy, query, deleteDoc, doc } from '../../services/firebase';
+import Swal from 'sweetalert2';
 
 import { jsPDF } from "jspdf";
 
@@ -136,7 +137,12 @@ const AdminPanel = () => {
             setIsAuthenticated(true);
             fetchData();
         } else {
-            alert('Contraseña incorrecta');
+            Swal.fire({
+                icon: 'error',
+                title: 'Acceso Denegado',
+                text: 'Contraseña incorrecta',
+                confirmButtonColor: '#C9A84C'
+            });
         }
     };
 
@@ -152,21 +158,49 @@ const AdminPanel = () => {
             setRegistros(data);
         } catch (error) {
             console.error("Error fetching documents: ", error);
-            alert("Error al cargar datos. Verifica tu conexión.");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: 'No se pudieron cargar los datos. Verifica tu conexión a internet.',
+                confirmButtonColor: '#C9A84C'
+            });
         } finally {
             setLoading(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if (window.confirm('¿Estás seguro de que quieres eliminar este registro permanentemente? Esta acción no se puede deshacer.')) {
+        const result = await Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Esta acción eliminará el registro permanentemente y no se puede deshacer.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#C9A84C',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+
+        if (result.isConfirmed) {
             try {
                 await deleteDoc(doc(db, "registros", id));
                 setRegistros(prev => prev.filter(item => item.id !== id));
-                alert("Registro eliminado exitosamente.");
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Eliminado',
+                    text: 'El registro ha sido eliminado exitosamente.',
+                    confirmButtonColor: '#C9A84C',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
             } catch (error) {
                 console.error("Error removing document: ", error);
-                alert("Error al eliminar el registro.");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Hubo un problema al intentar eliminar el registro.',
+                    confirmButtonColor: '#C9A84C'
+                });
             }
         }
     };

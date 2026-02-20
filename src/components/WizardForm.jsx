@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Swal from 'sweetalert2';
 import '../styles/main.css';
 import Step3_GuardianData from './steps/Step3_GuardianData';
 import Step4_Medical from './steps/Step4_Medical';
@@ -144,12 +145,12 @@ const Step2_StudentData = ({ data, updateData, onNext, onBack }) => {
         const { studentName, age, idCard, grade, parallel, gender } = data;
 
         if (!studentName?.trim() || !age || !idCard || !grade || !parallel || !gender) {
-            alert("Por favor complete todos los campos obligatorios (incluyendo Paralelo).");
+            Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Por favor complete todos los campos obligatorios (incluyendo Paralelo).', confirmButtonColor: '#C9A84C' });
             return;
         }
 
         if (idCard.length !== 10) {
-            alert("La cédula debe tener 10 dígitos obligatorios.");
+            Swal.fire({ icon: 'warning', title: 'Cédula inválida', text: 'La cédula debe tener 10 dígitos obligatorios.', confirmButtonColor: '#C9A84C' });
             return;
         }
 

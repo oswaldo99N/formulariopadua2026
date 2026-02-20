@@ -1,4 +1,5 @@
 import React from 'react';
+import Swal from 'sweetalert2';
 
 const IconArrowRight = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -120,33 +121,33 @@ const Step4_Medical = ({ data, updateData, onNext, onBack }) => {
     const handleNext = () => {
         // Validación básica de requeridos
         if (data.hasAllergies === true && !data.allergiesDetail?.trim()) {
-            alert('Por favor especifique los detalles de la alergia.');
+            Swal.fire({ icon: 'warning', title: 'Información incompleta', text: 'Por favor especifique los detalles de la alergia.', confirmButtonColor: '#C9A84C' });
             return;
         }
 
         if (data.hasMedication === true && !data.medicationDetail?.trim()) {
-            alert('Por favor especifique los detalles del medicamento (dosis/horario).');
+            Swal.fire({ icon: 'warning', title: 'Información incompleta', text: 'Por favor especifique los detalles del medicamento (dosis/horario).', confirmButtonColor: '#C9A84C' });
             return;
         }
 
         if (data.hasInsurance === undefined) {
-            alert('Por favor indique si tiene seguro médico.');
+            Swal.fire({ icon: 'warning', title: 'Información incompleta', text: 'Por favor indique si tiene seguro médico.', confirmButtonColor: '#C9A84C' });
             return;
         }
 
         if (data.hasInsurance === true) {
             if (!data.insuranceType || data.insuranceType === 'No aplica') {
-                alert('Por favor seleccione el tipo de seguro (Público o Privado).');
+                Swal.fire({ icon: 'warning', title: 'Información incompleta', text: 'Por favor seleccione el tipo de seguro (Público o Privado).', confirmButtonColor: '#C9A84C' });
                 return;
             }
             if (!data.insuranceDetail?.trim()) {
-                alert('Por favor especifique el nombre de la aseguradora o seguro médico.');
+                Swal.fire({ icon: 'warning', title: 'Información incompleta', text: 'Por favor especifique el nombre de la aseguradora o seguro médico.', confirmButtonColor: '#C9A84C' });
                 return;
             }
         }
 
         if (!data.bloodType) {
-            alert('Por favor seleccione el tipo de sangre.');
+            Swal.fire({ icon: 'warning', title: 'Información incompleta', text: 'Por favor seleccione el tipo de sangre.', confirmButtonColor: '#C9A84C' });
             return;
         }
 

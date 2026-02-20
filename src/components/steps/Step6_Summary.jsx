@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import emailjs from '@emailjs/browser';
 import { db, collection, addDoc, serverTimestamp } from '../../services/firebase';
 import { getConfirmationEmailHTML } from '../../utils/emailTemplates';
+import Swal from 'sweetalert2';
 import { jsPDF } from 'jspdf';
 import logoPadua from '../../assets/images/logo_padua.jpg';
 import logoMetanoiia from '../../assets/images/logo_metanoiia.png';
@@ -352,7 +353,12 @@ const Step6_Summary = ({ data, onBack }) => {
 
         } catch (error) {
             console.error('❌ Error crítico al guardar:', error);
-            alert('Hubo un error al conectar con el servidor. Por favor, verifica tu conexión e inténtalo de nuevo.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Error de conexión',
+                text: 'Hubo un error al conectar con el servidor. Por favor, verifica tu conexión e inténtalo de nuevo.',
+                confirmButtonColor: '#C9A84C'
+            });
         } finally {
             setIsSubmitting(false);
         }

@@ -1,4 +1,5 @@
 import React from 'react';
+import Swal from 'sweetalert2';
 
 const IconArrowRight = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -36,23 +37,23 @@ const Step3_GuardianData = ({ data, updateData, onNext, onBack }) => {
         const { guardianName, guardianPhone, guardianRelation, emergencyPhone } = data;
 
         if (!guardianName?.trim() || !guardianPhone?.trim() || !guardianRelation || !data.guardianEmail?.trim()) {
-            alert("Por favor complete todos los campos obligatorios (incluyendo Email).");
+            Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Por favor complete todos los campos obligatorios (incluyendo Email).', confirmButtonColor: '#C9A84C' });
             return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(data.guardianEmail)) {
-            alert("Por favor ingrese un correo electrónico válido.");
+            Swal.fire({ icon: 'warning', title: 'Correo inválido', text: 'Por favor ingrese un correo electrónico válido.', confirmButtonColor: '#C9A84C' });
             return;
         }
 
         if (guardianPhone.length !== 10) {
-            alert("El teléfono de contacto debe tener 10 dígitos.");
+            Swal.fire({ icon: 'warning', title: 'Teléfono inválido', text: 'El teléfono de contacto debe tener 10 dígitos.', confirmButtonColor: '#C9A84C' });
             return;
         }
 
         if (emergencyPhone && emergencyPhone.length !== 10) {
-            alert("El teléfono de emergencia debe tener 10 dígitos (o déjelo vacío).");
+            Swal.fire({ icon: 'warning', title: 'Teléfono inválido', text: 'El teléfono de emergencia debe tener 10 dígitos (o déjelo vacío).', confirmButtonColor: '#C9A84C' });
             return;
         }
 
