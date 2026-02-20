@@ -185,12 +185,19 @@ const AdminPanel = () => {
         doc.setFillColor(...cPrimary);
         doc.rect(0, 0, 210, 28, 'F');
 
-        // Right panel — gradient diffusion (lightest on left edge → dark on right)
-        // Simulated with 4 stacked vertical strips
-        doc.setFillColor(105, 68, 40); doc.rect(162, 0, 12, 28, 'F');
-        doc.setFillColor(90, 58, 33); doc.rect(174, 0, 12, 28, 'F');
-        doc.setFillColor(76, 48, 28); doc.rect(186, 0, 12, 28, 'F');
-        doc.setFillColor(62, 38, 20); doc.rect(198, 0, 12, 28, 'F');
+        // Right panel — gradient: café → blanco (8 strips)
+        const strips = 8;
+        const stripW = 48 / strips;
+        const startR = 59, startG = 35, startB = 20;   // café oscuro (#3B2314)
+        const endR = 255, endG = 252, endB = 245;        // blanco cálido
+        for (let s = 0; s < strips; s++) {
+            const t = s / (strips - 1);
+            const r = Math.round(startR + (endR - startR) * t);
+            const g = Math.round(startG + (endG - startG) * t);
+            const b = Math.round(startB + (endB - startB) * t);
+            doc.setFillColor(r, g, b);
+            doc.rect(162 + s * stripW, 0, stripW + 0.5, 28, 'F');
+        }
 
         // Gold separator line
         doc.setFillColor(...cGold);
@@ -203,16 +210,16 @@ const AdminPanel = () => {
         });
         try {
             const [imgPadua, imgMeta] = await Promise.all([loadImg(logoPadua), loadImg(logoMetanoiia)]);
-            doc.addImage(imgPadua, 'JPEG', 3, 2, 23, 23);      // left zone — square ratio
-            // Metanoiia: detect natural ratio and render proportionally, centered vertically
+            doc.addImage(imgPadua, 'JPEG', 2, 2, 24, 24);   // left zone
+
+            // Metanoiia — proportional, large, centered in right panel
             const mW = imgMeta.naturalWidth || imgMeta.width || 1;
             const mH = imgMeta.naturalHeight || imgMeta.height || 1;
-            const maxH = 22;
-            const maxW = 36;
+            const maxH = 24; const maxW = 44;
             let rW = maxW, rH = maxW * mH / mW;
             if (rH > maxH) { rH = maxH; rW = maxH * mW / mH; }
-            const mX = 162 + (48 - rW) / 2;   // center in right zone
-            const mY = (28 - rH) / 2;           // center vertically
+            const mX = 162 + (48 - rW) / 2;
+            const mY = (28 - rH) / 2;
             doc.addImage(imgMeta, 'PNG', mX, mY, rW, rH);
         } catch (e) { /* logos optional */ }
 
