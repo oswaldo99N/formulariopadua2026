@@ -291,7 +291,7 @@ const AdminPanel = () => {
 
         const auth = (label, val, desc) => {
             doc.setFont('helvetica', 'bold');
-            doc.setTextColor(val ? [5, 100, 60] : [160, 30, 30]);
+            doc.setTextColor(...(val ? [5, 100, 60] : [160, 30, 30]));
             doc.text(`${check(val)}  ${label}`, 14, y);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(...cMuted);
