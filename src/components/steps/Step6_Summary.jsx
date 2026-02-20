@@ -239,13 +239,16 @@ const Step6_Summary = ({ data, onBack }) => {
         setIsSubmitting(true);
 
         try {
-            // 1. Generar PDF y subir a Firebase Storage (optional, no bloquea)
+            // 1. Generar PDF y subir a Firebase Storage (con timeout de 5s)
             let pdfURL = null;
             try {
-                pdfURL = await generateAndUploadPDF(data);
+                const timeout = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Timeout')), 5000)
+                );
+                pdfURL = await Promise.race([generateAndUploadPDF(data), timeout]);
                 console.log('✅ PDF subido:', pdfURL);
             } catch (pdfErr) {
-                console.warn('⚠️ PDF no se pudo subir (continúa sin PDF):', pdfErr.message);
+                console.warn('⚠️ PDF omitido (continúa sin PDF):', pdfErr.message);
             }
 
             // 2. Guardar en Firestore
