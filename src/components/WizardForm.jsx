@@ -176,7 +176,7 @@ const Step2_StudentData = ({ data, updateData, onNext, onBack }) => {
                     />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div className="grid-2">
                     <div className="form-group">
                         <label htmlFor="age">Edad</label>
                         <input
@@ -204,7 +204,7 @@ const Step2_StudentData = ({ data, updateData, onNext, onBack }) => {
 
                 <div className="form-group">
                     <label htmlFor="grade">Curso y Paralelo</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '10px' }}>
+                    <div className="grid-2-auto">
                         <select
                             id="grade"
                             value={data.grade || ''}

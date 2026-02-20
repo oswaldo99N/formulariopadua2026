@@ -8,19 +8,7 @@ import logoPadua from '../../assets/images/logo_padua.jpg';
 import logoMetanoiia from '../../assets/images/logo_metanoiia.png';
 
 const Sidebar = ({ activeTab, setActiveTab, onLogout }) => (
-    <div style={{
-        width: '260px',
-        background: 'var(--color-primary)',
-        color: '#fff',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '2rem 1.5rem',
-        position: 'fixed',
-        top: 0,
-        bottom: 0,
-        left: 0,
-        zIndex: 100
-    }}>
+    <div className="admin-sidebar">
         <div style={{ marginBottom: '3rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '40px', height: '40px', background: 'var(--color-secondary)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>P</div>
             <div>
@@ -29,7 +17,7 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => (
             </div>
         </div>
 
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <nav className="admin-nav" style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
             <button
                 onClick={() => setActiveTab('dashboard')}
                 style={{
@@ -595,11 +583,11 @@ const AdminPanel = () => {
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--color-bg)', display: 'flex' }}>
+        <div className="admin-layout">
             <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onLogout={() => setIsAuthenticated(false)} />
 
-            <main style={{ flex: 1, marginLeft: '260px', padding: '3rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+            <main className="admin-main">
+                <div className="admin-header">
                     <div>
                         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>
                             {activeTab === 'dashboard' ? 'Panel General' : 'Gestión de Inscripciones'}
@@ -608,7 +596,7 @@ const AdminPanel = () => {
                             {activeTab === 'dashboard' ? 'Resumen estadístico del retiro 2026.' : 'Administra y exporta los registros de estudiantes.'}
                         </p>
                     </div>
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                    <div className="admin-header-actions">
                         <button onClick={downloadAllPDFs} className="btn-primary" style={{ padding: '12px 24px', fontSize: '0.9rem', boxShadow: 'var(--shadow-lg)' }}>
                             📄 Descargar Fichas (PDF)
                         </button>
@@ -632,7 +620,7 @@ const AdminPanel = () => {
                         </div>
 
                         {/* ADVANCED STATS GRID */}
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem', marginBottom: '2rem' }}>
+                        <div className="admin-stats-grid">
 
                             {/* 1. Velocity Chart (Registros por Día) */}
                             <div className="glass-panel" style={{ padding: '1.5rem', background: '#fff', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
@@ -769,11 +757,7 @@ const AdminPanel = () => {
                 {activeTab === 'inscripciones' && (
                     <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
                         {/* Filters Toolbar */}
-                        <div style={{
-                            background: '#fff', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-soft)',
-                            display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1.5rem',
-                            boxShadow: 'var(--shadow-sm)'
-                        }}>
+                        <div className="admin-filters">
                             <div style={{ flex: 1, position: 'relative' }}>
                                 <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', opacity: 0.5 }}>🔍</span>
                                 <input
@@ -968,7 +952,7 @@ const AdminPanel = () => {
 
                             {/* Modal Content */}
                             <div style={{ padding: '32px', overflowY: 'auto' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
+                                <div className="admin-grid-2">
                                     <div>
                                         <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--color-text-light)', letterSpacing: '0.1em', marginBottom: '16px', fontWeight: 700 }}>Información Personal</h4>
                                         <div style={{ display: 'grid', gap: '12px', fontSize: '0.95rem' }}>
@@ -1020,7 +1004,7 @@ const AdminPanel = () => {
 
                                 <div style={{ marginTop: '32px' }}>
                                     <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--color-text-light)', letterSpacing: '0.1em', marginBottom: '16px', fontWeight: 700 }}>Ficha Médica</h4>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                                    <div className="admin-grid-3">
                                         <div style={{ background: selectedRecord.hasInsurance ? '#ECFDF5' : 'var(--bg-dashboard)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-soft)' }}>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '4px' }}>Seguro Médico</div>
                                             <div style={{ fontWeight: 600, color: selectedRecord.hasInsurance ? '#059669' : 'var(--color-text)' }}>{selectedRecord.hasInsurance ? 'SÍ' : 'NO'}</div>
@@ -1049,7 +1033,7 @@ const AdminPanel = () => {
                                 <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px dashed var(--border-soft)' }}>
                                     <h4 style={{ fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--color-text-light)', letterSpacing: '0.1em', marginBottom: '16px', fontWeight: 700 }}>Legal y Autorizaciones</h4>
 
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '32px' }}>
+                                    <div className="admin-grid-auto">
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem' }}>
                                                 <span style={{ color: selectedRecord.acceptedRules ? '#059669' : '#9CA3AF' }}>{selectedRecord.acceptedRules ? '✅' : '⬜'}</span>
