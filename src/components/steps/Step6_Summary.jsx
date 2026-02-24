@@ -295,7 +295,7 @@ const Step6_Summary = ({ data, onBack }) => {
         formData.append('public_id', `fichas/${filename}`);
 
         const response = await fetch(
-            'https://api.cloudinary.com/v1_1/dc1oohqwu/raw/upload',
+            'https://api.cloudinary.com/v1_1/dc1oohqwu/auto/upload',
             { method: 'POST', body: formData }
         );
         if (!response.ok) throw new Error(`Cloudinary error: ${response.status}`);
@@ -310,11 +310,11 @@ const Step6_Summary = ({ data, onBack }) => {
         setIsSubmitting(true);
 
         try {
-            // 1. Generar PDF y subir a Firebase Storage (con timeout de 5s)
+            // 1. Generar PDF y subir a Cloudinary (con timeout de 20s)
             let pdfURL = null;
             try {
                 const timeout = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('Timeout')), 5000)
+                    setTimeout(() => reject(new Error('Timeout de espera para PDF')), 20000)
                 );
                 pdfURL = await Promise.race([generateAndUploadPDF(data), timeout]);
                 console.log('✅ PDF subido:', pdfURL);
