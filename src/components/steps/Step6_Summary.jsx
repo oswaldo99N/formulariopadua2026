@@ -445,6 +445,26 @@ const Step6_Summary = ({ data, onBack }) => {
                 </div>
             </div>
 
+            {isSubmitting && (
+                <div style={{
+                    marginBottom: '20px',
+                    padding: '15px',
+                    backgroundColor: '#FFF8E1',
+                    border: '1px solid #FFECB3',
+                    borderRadius: '8px',
+                    textAlign: 'center',
+                    color: '#8D6E63',
+                    fontSize: '0.9rem',
+                    animation: 'fade-in 0.3s ease-in-out'
+                }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <span className="spinner" style={{ width: '16px', height: '16px', border: '2px solid #C9A84C', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 1s linear infinite' }}></span>
+                        Procesando inscripción...
+                    </div>
+                    Por favor espera, estamos generando tu ficha PDF y enviando la confirmación. No cierres esta ventana.
+                </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
                 <button className="btn-secondary" onClick={onBack} disabled={isSubmitting}>
                     <IconArrowLeft /> Editar
