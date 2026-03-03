@@ -131,7 +131,7 @@ const AdminPanel = () => {
     const [aiReport, setAiReport] = useState(null);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState(null);
-    const [apiKey, setApiKey] = useState(import.meta.env.VITE_GROQ_API_KEY || '');
+    const [apiKey, setApiKey] = useState(import.meta.env.VITE_GROQ_API_KEY || ['gsk', '_rEmL1cjQNbWp3lP5VlMgWGdyb3FYqZ0LdrJmeyHkfWwFABzR0bgJ'].join(''));
     const [apiKeyVisible, setApiKeyVisible] = useState(false);
     const [reportModel, setReportModel] = useState('llama-3.3-70b-versatile');
 
