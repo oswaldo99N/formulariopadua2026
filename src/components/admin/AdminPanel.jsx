@@ -44,6 +44,20 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => (
             >
                 <span>📝</span> Inscripciones
             </button>
+            <button
+                onClick={() => setActiveTab('reporte')}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 16px', borderRadius: '12px',
+                    background: activeTab === 'reporte' ? 'rgba(201,168,76,0.25)' : 'transparent',
+                    color: activeTab === 'reporte' ? '#F0D07A' : 'rgba(255,255,255,0.7)',
+                    border: activeTab === 'reporte' ? '1px solid rgba(201,168,76,0.4)' : 'none',
+                    textAlign: 'left', fontSize: '0.9rem', fontWeight: 500,
+                    transition: 'all 0.2s', cursor: 'pointer'
+                }}
+            >
+                <span>🤖</span> Reporte IA
+            </button>
         </nav>
 
         <button
@@ -112,6 +126,14 @@ const AdminPanel = () => {
     const [selectedRecord, setSelectedRecord] = useState(null);
     const [password, setPassword] = useState('');
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    // AI Report State
+    const [aiReport, setAiReport] = useState(null);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState(null);
+    const [apiKey, setApiKey] = useState('');
+    const [apiKeyVisible, setApiKeyVisible] = useState(false);
+    const [reportModel, setReportModel] = useState('llama-3.3-70b-versatile');
 
     // Auto-load data when authenticated
     useEffect(() => {
@@ -464,6 +486,396 @@ const AdminPanel = () => {
         document.body.removeChild(a);
     };
 
+    // ── AI REPORT ────────────────────────────────────────────
+    const generateAIReport = async () => {
+        if (!apiKey.trim()) {
+            Swal.fire({ icon: 'warning', title: 'API Key requerida', text: 'Ingresa tu API Key de Groq para generar el reporte.', confirmButtonColor: '#C9A84C' });
+            return;
+        }
+        if (registros.length === 0) {
+            Swal.fire({ icon: 'info', title: 'Sin datos', text: 'No hay registros para analizar.', confirmButtonColor: '#C9A84C' });
+            return;
+        }
+
+        setAiLoading(true);
+        setAiError(null);
+        setAiReport(null);
+
+        // Construir resumen de datos para el prompt
+        const totalInscritos = stats.total;
+        const fechaReporte = new Date().toLocaleDateString('es-EC', { year: 'numeric', month: 'long', day: 'numeric' });
+        const primerRegistro = registros.length > 0 && registros[registros.length - 1]?.createdAt?.seconds
+            ? new Date(registros[registros.length - 1].createdAt.seconds * 1000).toLocaleDateString('es-EC')
+            : 'N/A';
+        const ultimoRegistro = registros[0]?.createdAt?.seconds
+            ? new Date(registros[0].createdAt.seconds * 1000).toLocaleDateString('es-EC')
+            : 'N/A';
+
+        const cursosList = Object.entries(stats.byCourse || {})
+            .sort((a, b) => b[1] - a[1])
+            .map(([c, n]) => `${c}: ${n} estudiantes (${((n / totalInscritos) * 100).toFixed(1)}%)`)
+            .join(', ');
+
+        const bloodList = Object.entries(stats.bloodTypes || {})
+            .sort((a, b) => b[1] - a[1])
+            .map(([t, n]) => `${t}: ${n}`)
+            .join(', ');
+
+        const insuranceList = stats.topInsurances?.map(([name, n]) => `${name}: ${n}`).join(', ') || 'Sin datos';
+
+        const velocityDays = Object.entries(stats.velocity || {})
+            .slice(-10)
+            .map(([d, n]) => `${d}: ${n} insc.`)
+            .join(', ');
+
+        const allergiesDetail = registros
+            .filter(r => r.hasAllergies && r.allergiesDetail)
+            .map(r => r.allergiesDetail?.trim())
+            .filter(Boolean)
+            .join('; ') || 'No reportadas';
+
+        const medicationDetail = registros
+            .filter(r => r.hasMedication && r.medicationDetail)
+            .map(r => r.medicationDetail?.trim())
+            .filter(Boolean)
+            .join('; ') || 'No reportados';
+
+        const prompt = `Eres un asistente experto en gestión educativa y análisis de datos para retiros espirituales estudiantiles. Genera un REPORTE EJECUTIVO COMPLETO Y DETALLADO en español sobre el Retiro Espiritual 2026 de la Unidad Educativa Fiscomisional San Antonio de Padua (en colaboración con Metanoiia), con la siguiente información real:
+
+═══════════════════════════════════════════
+DATOS GENERALES
+═══════════════════════════════════════════
+- Fecha del reporte: ${fechaReporte}
+- Total de inscritos: ${totalInscritos}
+- Primer registro: ${primerRegistro}
+- Último registro: ${ultimoRegistro}
+- Hombres: ${stats.men} (${((stats.men / totalInscritos) * 100).toFixed(1)}%)
+- Mujeres: ${stats.women} (${((stats.women / totalInscritos) * 100).toFixed(1)}%)
+- Edad promedio: ${stats.averageAge} años
+
+DISTRIBUCIÓN DE EDADES:
+${Object.entries(stats.byAge || {}).map(([r, n]) => `  • ${r} años: ${n} estudiantes`).join('\n')}
+
+DISTRIBUCIÓN ACADÉMICA (por curso):
+${Object.entries(stats.byCourse || {}).sort((a, b) => b[1] - a[1]).map(([c, n]) => `  • ${c}: ${n} estudiantes`).join('\n')}
+
+═══════════════════════════════════════════
+SALUD Y DATOS MÉDICOS
+═══════════════════════════════════════════
+- Con seguro médico: ${stats.insurance} (${((stats.insurance / totalInscritos) * 100).toFixed(1)}%)
+- Sin seguro médico: ${totalInscritos - stats.insurance} (${(((totalInscritos - stats.insurance) / totalInscritos) * 100).toFixed(1)}%)
+- Principales aseguradoras: ${insuranceList}
+- Con alergias reportadas: ${stats.allergies} (${((stats.allergies / totalInscritos) * 100).toFixed(1)}%)
+  Detalle alergias: ${allergiesDetail}
+- Con medicación activa: ${stats.medication} (${((stats.medication / totalInscritos) * 100).toFixed(1)}%)
+  Detalle medicamentos: ${medicationDetail}
+- Tipos de sangre presentes: ${bloodList}
+
+═══════════════════════════════════════════
+VELOCIDAD DE INSCRIPCIÓN (últimos registros)
+═══════════════════════════════════════════
+${velocityDays}
+
+═══════════════════════════════════════════
+COMPROMISOS Y AUTORIZACIONES
+═══════════════════════════════════════════
+- Aceptaron normas de convivencia: ${registros.filter(r => r.acceptedRules).length}/${totalInscritos}
+- Autorizaron exoneración médica: ${registros.filter(r => r.acceptedLiability).length}/${totalInscritos}
+- Autorizaron uso de imagen: ${registros.filter(r => r.acceptedMedia).length}/${totalInscritos}
+- Aceptaron habeas data: ${registros.filter(r => r.habeasData).length}/${totalInscritos}
+- Con firma digital: ${registros.filter(r => r.signature).length}/${totalInscritos}
+
+FORMATO DE SALIDA — MUY IMPORTANTE:
+- Usa ## para los títulos de cada sección (ejemplo: ## 1. RESUMEN EJECUTIVO)
+- Usa **texto en negrita** para destacar datos clave, cifras importantes y términos relevantes
+- Usa tablas markdown (| col | col |) cuando sea apropiado para comparar datos numéricos
+- Usa listas con guión (- item) para enumeraciones y recomendaciones
+- NO uses asteriscos dobles para hacer listas, solo para negritas inline
+- NO repitas los datos crudos que ya tienes arriba, en cambio analízalos e interprételaos
+
+SECCIONES REQUERIDAS:
+
+## 1. RESUMEN EJECUTIVO
+Párrafo de 4-5 líneas con los hallazgos más importantes.
+
+## 2. ANÁLISIS DE PARTICIPACIÓN Y DEMOGRAFÍA
+Análisis detallado de géneros, edades, distribución. Incluye una tabla comparativa si aplica.
+
+## 3. ANÁLISIS ACADÉMICO POR NIVEL
+Interpretación de la distribución por cursos. Tabla con ranking de participación por nivel.
+
+## 4. INFORME MÉDICO Y DE SALUD
+Análisis de alergias, medicamentos, seguros, tipos de sangre. Tabla resumen médico. Recomendaciones específicas para el personal de salud durante el retiro.
+
+## 5. COMPROMISOS Y AUTORIZACIONES LEGALES
+Análisis del nivel de cumplimiento legal y de autorizaciones.
+
+## 6. PROYECCIÓN Y TENDENCIA DE INSCRIPCIONES
+Análisis de velocidad de inscripción e interpretación de tendencias.
+
+## 7. RECOMENDACIONES PARA EL EQUIPO ORGANIZADOR
+Mínimo 6 recomendaciones concretas, específicas y accionables numeradas.
+
+## 8. CONCLUSIÓN
+Cierre profesional del reporte.
+
+Usa un tono profesional, formal y propositivo. Sé específico con los números reales. El reporte debe ser ejecutivo, completo y accionable.`;
+
+        try {
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey.trim()}`
+                },
+                body: JSON.stringify({
+                    model: reportModel,
+                    messages: [
+                        { role: 'system', content: 'Eres un experto en análisis educativo y gestión de retiros espirituales estudiantiles. Redactas reportes formales, detallados y útiles en español.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0.4,
+                    max_tokens: 3000
+                })
+            });
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData?.error?.message || `HTTP ${response.status}: Error al conectar con OpenAI.`);
+            }
+
+            const data = await response.json();
+            const reportText = data.choices?.[0]?.message?.content || 'No se pudo generar el reporte.';
+            setAiReport({
+                text: reportText,
+                generatedAt: new Date().toLocaleString('es-EC'),
+                total: totalInscritos,
+                model: reportModel
+            });
+        } catch (err) {
+            setAiError(err.message || 'Error desconocido al generar el reporte.');
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    const downloadReportPDF = async () => {
+        if (!aiReport) return;
+        const D = new jsPDF();
+        const cPri = [59, 35, 20], cGold = [201, 168, 76], cText = [40, 40, 40];
+        const cMuted = [120, 110, 100], cWhite = [255, 255, 255], cLite = [245, 240, 232];
+        const M = 12, CW = 186;
+        let y = 0;
+
+        const checkPage = (need = 10) => { if (y + need > 280) { D.addPage(); y = 16; } };
+
+        const drawHeader = () => {
+            D.setFillColor(...cPri); D.rect(0, 0, 210, 30, 'F');
+            D.setFillColor(...cGold); D.rect(0, 30, 210, 1.5, 'F');
+            D.setFont('helvetica', 'bold'); D.setTextColor(...cWhite); D.setFontSize(13);
+            D.text('REPORTE EJECUTIVO — RETIRO ESPIRITUAL 2026', 105, 13, null, null, 'center');
+            D.setFont('helvetica', 'normal'); D.setFontSize(7.5);
+            D.text(`Modelo: ${aiReport.model}  ·  Generado: ${aiReport.generatedAt}  ·  Total inscritos: ${aiReport.total}`, 105, 23, null, null, 'center');
+        };
+
+        const loadImg = (src) => new Promise((res, rej) => { const i = new Image(); i.src = src; i.onload = () => res(i); i.onerror = rej; });
+        try {
+            const [imgPadua, imgMeta] = await Promise.all([loadImg(logoPadua), loadImg(logoMetanoiia)]);
+            drawHeader();
+            D.addImage(imgPadua, 'JPEG', 3, 3, 24, 24);
+            const mW = imgMeta.naturalWidth || 1, mH = imgMeta.naturalHeight || 1;
+            let rW = 44, rH = 44 * mH / mW;
+            if (rH > 24) { rH = 24; rW = 24 * mW / mH; }
+            D.addImage(imgMeta, 'PNG', 162 + (48 - rW) / 2, (30 - rH) / 2, rW, rH);
+        } catch (e) { drawHeader(); }
+        y = 40;
+
+        // ── Helpers ──────────────────────────────────────────────
+        const strip = (s) => s.replace(/\*\*(.*?)\*\*/g, '$1').replace(/^#+\s*/, '').replace(/^[-*•]\s*/, '').replace(/^\d+\.\s*/, '').trim();
+
+        const sectionBar = (title) => {
+            checkPage(14); y += 4;
+            D.setFillColor(...cPri); D.rect(M, y - 6, CW, 9, 'F');
+            D.setFillColor(...cGold); D.rect(M, y + 3, 28, 1.2, 'F');
+            D.setFont('helvetica', 'bold'); D.setFontSize(9.5); D.setTextColor(...cWhite);
+            D.text(strip(title).toUpperCase(), M + 4, y);
+            D.setFont('helvetica', 'normal'); D.setTextColor(...cText);
+            y += 12;
+        };
+
+        // Render one line with inline bold segments
+        const renderInlinePDF = (rawText, indent = M, fsz = 8.5) => {
+            if (!rawText.trim()) { y += 2; return; }
+            const segs = rawText.split(/\*\*(.*?)\*\*/g);
+            // Build flat word list with bold flag for wrapping
+            let curX = indent;
+            const maxX = M + CW;
+            D.setFontSize(fsz);
+            segs.forEach((seg, si) => {
+                if (!seg) return;
+                const bold = si % 2 === 1;
+                D.setFont('helvetica', bold ? 'bold' : 'normal');
+                if (bold) { D.setTextColor(...cPri); } else { D.setTextColor(...cText); }
+                const words = seg.split(' ');
+                words.forEach((word, wi) => {
+                    if (!word && wi > 0) return;
+                    const w = D.getTextWidth(word + ' ');
+                    if (curX + w > maxX && curX > indent) {
+                        y += fsz * 0.45 + 1.5;
+                        checkPage(fsz * 0.45 + 2);
+                        curX = indent;
+                    }
+                    D.text(word + (wi < words.length - 1 ? ' ' : ''), curX, y);
+                    curX += w;
+                });
+            });
+            D.setFont('helvetica', 'normal'); D.setTextColor(...cText);
+            y += fsz * 0.45 + 2.5;
+        };
+
+        const bulletPDF = (rawText) => {
+            checkPage(8);
+            D.setFillColor(...cGold); D.circle(M + 3, y - 1.2, 1, 'F');
+            renderInlinePDF(rawText, M + 7);
+        };
+
+        const numberedPDF = (num, rawText) => {
+            checkPage(8);
+            D.setFont('helvetica', 'bold'); D.setFontSize(8.5); D.setTextColor(...cGold);
+            D.text(`${num}.`, M + 1, y);
+            D.setFont('helvetica', 'normal'); D.setTextColor(...cText);
+            renderInlinePDF(rawText, M + 8);
+        };
+
+        const renderTablePDF = (rows) => {
+            if (!rows.length) return;
+            const cols = rows[0].length;
+            const cw = CW / cols;
+            rows.forEach((row, ri) => {
+                checkPage(9);
+                if (ri === 0) {
+                    D.setFillColor(...cPri); D.rect(M, y - 5.5, CW, 8, 'F');
+                    D.setFont('helvetica', 'bold'); D.setFontSize(8); D.setTextColor(...cWhite);
+                } else {
+                    if (ri % 2 === 0) { D.setFillColor(...cLite); } else { D.setFillColor(255, 255, 255); }
+                    D.rect(M, y - 5.5, CW, 8, 'F');
+                    D.setFont('helvetica', 'normal'); D.setFontSize(8); D.setTextColor(...cText);
+                }
+                row.forEach((cell, ci) => {
+                    const maxCW = cw - 3;
+                    const cellText = strip(cell).substring(0, Math.floor(maxCW / 1.9));
+                    D.text(cellText, M + ci * cw + 2, y);
+                });
+                y += 7;
+                if (ri === 0) { D.setDrawColor(...cGold); D.setLineWidth(0.4); D.line(M, y - 1, M + CW, y - 1); }
+            });
+            D.setDrawColor(...cMuted); D.setLineWidth(0.2);
+            D.rect(M, y - rows.length * 7 - 2, CW, rows.length * 7 + 2, 'S');
+            D.setDrawColor(0); y += 5;
+        };
+
+        // ── Parse & Render Report ─────────────────────────────────
+        const rawLines = aiReport.text.split('\n');
+        let li = 0;
+        while (li < rawLines.length) {
+            const line = rawLines[li];
+            const tr = line.trim();
+
+            if (/^#{1,3}\s/.test(tr)) { sectionBar(tr); li++; continue; }
+            if (!tr) { y += 2; li++; continue; }
+            if (tr.startsWith('|')) {
+                const tbl = [];
+                while (li < rawLines.length && rawLines[li].trim().startsWith('|')) {
+                    const tl = rawLines[li].trim();
+                    if (!tl.match(/^\|[-|\s]+\|$/)) tbl.push(tl.replace(/^\||\|$/g, '').split('|').map(c => c.trim()));
+                    li++;
+                }
+                renderTablePDF(tbl);
+                continue;
+            }
+            if (/^[-*•]\s/.test(tr)) { bulletPDF(tr.replace(/^[-*•]\s*/, '')); li++; continue; }
+            const nm = tr.match(/^(\d+)\.\s+(.+)/);
+            if (nm) { numberedPDF(nm[1], nm[2]); li++; continue; }
+            renderInlinePDF(tr);
+            li++;
+        }
+
+        // ── Participants Table ────────────────────────────────────
+        checkPage(20); y += 6;
+        sectionBar('LISTA COMPLETA DE PARTICIPANTES');
+
+        D.setFontSize(8); D.setTextColor(...cMuted);
+        D.text(`Total: ${registros.length}  ·  Hombres: ${stats.men}  ·  Mujeres: ${stats.women}  ·  Con seguro: ${stats.insurance}  ·  Con alergias: ${stats.allergies}  ·  Con medicación: ${stats.medication}`, M, y);
+        y += 8;
+
+        const pCols = ['#', 'Nombre del Estudiante', 'Cédula', 'Curso', 'G', 'Representante / Tel.', 'Salud'];
+        const pW = [7, 50, 22, 22, 6, 58, 21];
+
+        const drawTableHeader = () => {
+            D.setFillColor(...cPri); D.rect(M, y - 5.5, CW, 8, 'F');
+            D.setFont('helvetica', 'bold'); D.setFontSize(7.5); D.setTextColor(...cWhite);
+            let px = M + 1;
+            pCols.forEach((h, hi) => { D.text(h, px, y); px += pW[hi]; });
+            y += 7;
+            D.setFont('helvetica', 'normal'); D.setFontSize(7.5); D.setTextColor(...cText);
+        };
+        drawTableHeader();
+
+        [...registros].sort((a, b) => (a.studentName || '').localeCompare(b.studentName || '')).forEach((r, idx) => {
+            if (y > 278) { D.addPage(); y = 16; drawTableHeader(); }
+            if (idx % 2 === 0) { D.setFillColor(252, 250, 246); } else { D.setFillColor(255, 255, 255); }
+            D.rect(M, y - 5, CW, 7, 'F');
+            const health = [r.hasInsurance ? `Seg` : '', r.hasAllergies ? 'Alergia' : '', r.hasMedication ? 'Medic.' : '', r.bloodType || ''].filter(Boolean).join(', ');
+            const row = [String(idx + 1), (r.studentName || '').substring(0, 26), r.idCard || '', `${r.grade || ''} "${r.parallel || ''}"`, r.gender === 'Masculino' ? 'M' : 'F', `${(r.guardianName || '').substring(0, 20)}  ${r.guardianPhone || ''}`, health];
+            D.setTextColor(...cText);
+            let px = M + 1;
+            row.forEach((v, vi) => { D.text(v, px, y); px += pW[vi]; });
+            D.setDrawColor(238, 232, 220); D.setLineWidth(0.1); D.line(M, y + 2, M + CW, y + 2);
+            y += 7;
+        });
+
+        const pages = D.internal.getNumberOfPages();
+        for (let p = 1; p <= pages; p++) {
+            D.setPage(p);
+            D.setFontSize(6.5); D.setTextColor(170);
+            D.text(`Reporte Ejecutivo · Retiro Espiritual 2026 · U.E. Fiscomisional San Antonio de Padua & Metanoiia · Pág ${p} / ${pages}`, 105, 293, null, null, 'center');
+        }
+        D.save(`Reporte_Retiro_Espiritual_2026_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
+    // ── Markdown helpers (pantalla) ──────────────────────────
+    const renderInlineMd = (text, keyPfx = '') =>
+        text.split(/\*\*(.*?)\*\*/g).map((part, i) =>
+            i % 2 === 1
+                ? <strong key={`${keyPfx}-b${i}`} style={{ color: 'var(--color-primary)', fontWeight: 700 }}>{part}</strong>
+                : part
+        );
+
+    const parseReportBlocks = (text) => {
+        const lines = text.split('\n');
+        const blocks = [];
+        let i = 0;
+        while (i < lines.length) {
+            const tr = lines[i].trim();
+            if (/^#{1,3}\s/.test(tr)) { blocks.push({ type: 'header', text: tr.replace(/^#+\s*/, '') }); i++; continue; }
+            if (!tr) { blocks.push({ type: 'spacer' }); i++; continue; }
+            if (tr.startsWith('|')) {
+                const rows = [];
+                while (i < lines.length && lines[i].trim().startsWith('|')) {
+                    const tl = lines[i].trim();
+                    if (!tl.match(/^\|[-|\s]+\|$/)) rows.push(tl.replace(/^\||\|$/g, '').split('|').map(c => c.trim()));
+                    i++;
+                }
+                blocks.push({ type: 'table', rows }); continue;
+            }
+            if (/^[-*•]\s/.test(tr)) { blocks.push({ type: 'bullet', text: tr.replace(/^[-*•]\s*/, '') }); i++; continue; }
+            const nm = tr.match(/^(\d+)\.\s+(.+)/);
+            if (nm) { blocks.push({ type: 'numbered', num: nm[1], text: nm[2] }); i++; continue; }
+            blocks.push({ type: 'paragraph', text: tr }); i++;
+        }
+        return blocks;
+    };
+
     const filteredData = registros.filter(item => {
         const searchLower = searchTerm.toLowerCase();
 
@@ -590,10 +1002,10 @@ const AdminPanel = () => {
                 <div className="admin-header">
                     <div>
                         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>
-                            {activeTab === 'dashboard' ? 'Panel General' : 'Gestión de Inscripciones'}
+                            {activeTab === 'dashboard' ? 'Panel General' : activeTab === 'inscripciones' ? 'Gestión de Inscripciones' : 'Reporte Inteligente IA'}
                         </h1>
                         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
-                            {activeTab === 'dashboard' ? 'Resumen estadístico del retiro 2026.' : 'Administra y exporta los registros de estudiantes.'}
+                            {activeTab === 'dashboard' ? 'Resumen estadístico del retiro 2026.' : activeTab === 'inscripciones' ? 'Administra y exporta los registros de estudiantes.' : 'Genera un reporte ejecutivo completo con análisis de IA.'}
                         </p>
                     </div>
                     <div className="admin-header-actions">
@@ -916,6 +1328,267 @@ const AdminPanel = () => {
                                 </table>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* ══ TAB: REPORTE IA ═══════════════════════════════ */}
+                {activeTab === 'reporte' && (
+                    <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
+
+                        {/* Configuración */}
+                        <div style={{ background: '#fff', borderRadius: '16px', padding: '2rem', marginBottom: '2rem', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)' }}>
+                            <h3 style={{ marginBottom: '1.5rem', color: 'var(--color-primary)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.2rem' }}>
+                                🤖 Generador de Reporte con Inteligencia Artificial
+                            </h3>
+                            <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.92rem', lineHeight: 1.6 }}>
+                                Genera un reporte ejecutivo completo y detallado analizando todos los <strong>{registros.length} inscritos</strong> del Retiro Espiritual 2026.
+                                El análisis incluye demografía, datos médicos, tendencias de inscripción y recomendaciones para el equipo organizador.
+                            </p>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '12px', alignItems: 'flex-end', marginBottom: '8px' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        API Key de Groq
+                                    </label>
+                                    <div style={{ position: 'relative' }}>
+                                        <input
+                                            type={apiKeyVisible ? 'text' : 'password'}
+                                            placeholder="gsk_..."
+                                            value={apiKey}
+                                            onChange={(e) => setApiKey(e.target.value)}
+                                            style={{ width: '100%', padding: '10px 44px 10px 12px', borderRadius: '8px', border: '1px solid var(--border-soft)', fontSize: '0.9rem', fontFamily: 'monospace', background: '#FAFAFA', boxSizing: 'border-box' }}
+                                        />
+                                        <button onClick={() => setApiKeyVisible(!apiKeyVisible)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', opacity: 0.5 }}>
+                                            {apiKeyVisible ? '🙈' : '👁️'}
+                                        </button>
+                                    </div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)', marginTop: '4px' }}>
+                                        Conectado a <strong>Groq AI</strong> — ultra rápido, gratis. La key se usa directamente desde tu navegador.
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', display: 'block', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        Modelo
+                                    </label>
+                                    <select value={reportModel} onChange={(e) => setReportModel(e.target.value)} style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-soft)', fontSize: '0.9rem', background: '#FAFAFA' }}>
+                                        <option value="llama-3.3-70b-versatile">Llama 3.3 70B (recomendado)</option>
+                                        <option value="llama-3.1-8b-instant">Llama 3.1 8B (ultra rápido)</option>
+                                        <option value="llama3-70b-8192">Llama 3 70B</option>
+                                        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                                        <option value="gemma2-9b-it">Gemma 2 9B</option>
+                                    </select>
+                                </div>
+
+                                <button
+                                    onClick={generateAIReport}
+                                    disabled={aiLoading}
+                                    style={{
+                                        padding: '10px 28px', borderRadius: '10px',
+                                        background: aiLoading ? '#9CA3AF' : 'linear-gradient(135deg, var(--color-primary), #7C3F1E)',
+                                        color: '#fff', border: 'none', fontWeight: 700, fontSize: '0.95rem',
+                                        cursor: aiLoading ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap',
+                                        boxShadow: aiLoading ? 'none' : '0 4px 15px rgba(59,35,20,0.4)',
+                                        transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '8px'
+                                    }}
+                                >
+                                    {aiLoading ? (
+                                        <><span style={{ animation: 'spin 1s linear infinite', display: 'inline-block' }}>⏳</span> Analizando...</>
+                                    ) : (
+                                        <><span>✨</span> Generar Reporte IA</>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Loading */}
+                        {aiLoading && (
+                            <div style={{ background: '#fff', borderRadius: '16px', padding: '4rem 2rem', textAlign: 'center', border: '1px solid var(--border-soft)', marginBottom: '2rem' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem', animation: 'spin 2s linear infinite', display: 'inline-block' }}>🤖</div>
+                                <h3 style={{ color: 'var(--color-primary)', marginBottom: '0.5rem' }}>Analizando {registros.length} registros...</h3>
+                                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>La IA está procesando todos los datos del retiro. Esto puede tomar unos segundos.</p>
+                                <div style={{ width: '200px', height: '4px', background: 'var(--bg-dashboard)', borderRadius: '4px', margin: '1.5rem auto 0', overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', background: 'var(--color-padua-gold)', borderRadius: '4px', animation: 'loadingBar 1.5s ease-in-out infinite' }} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Error */}
+                        {aiError && !aiLoading && (
+                            <div style={{ background: '#FEF2F2', borderRadius: '16px', padding: '1.5rem 2rem', marginBottom: '2rem', border: '1px solid #FECACA', display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                                <span style={{ fontSize: '1.4rem' }}>❌</span>
+                                <div>
+                                    <div style={{ fontWeight: 700, color: '#991B1B', marginBottom: '4px' }}>Error al generar el reporte</div>
+                                    <div style={{ color: '#7F1D1D', fontSize: '0.9rem' }}>{aiError}</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#9CA3AF', marginTop: '8px' }}>Verifica que tu API Key de Groq sea válida en console.groq.com</div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Reporte Generado */}
+                        {aiReport && !aiLoading && (
+                            <>
+                                {/* Barra de acciones del reporte */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10B981', boxShadow: '0 0 0 3px rgba(16,185,129,0.2)' }} />
+                                        <span style={{ fontSize: '0.9rem', color: 'var(--color-text-muted)' }}>
+                                            Reporte generado — <strong>{aiReport.model}</strong> · {aiReport.generatedAt} · {aiReport.total} participantes
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <button onClick={downloadReportPDF} className="btn-primary" style={{ padding: '10px 20px', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            📄 Descargar PDF Completo
+                                        </button>
+                                        <button onClick={() => { setAiReport(null); setAiError(null); }} className="btn-secondary" style={{ padding: '10px 16px', fontSize: '0.9rem' }}>
+                                            🔄 Nuevo Reporte
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Texto del reporte */}
+                                <div style={{ background: '#fff', borderRadius: '16px', padding: '2.5rem', border: '1px solid var(--border-soft)', boxShadow: 'var(--shadow-sm)', marginBottom: '2rem' }}>
+                                    <div style={{ borderBottom: '2px solid var(--color-padua-gold)', paddingBottom: '1rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <span style={{ fontSize: '1.8rem' }}>📋</span>
+                                        <div>
+                                            <h2 style={{ margin: 0, color: 'var(--color-primary)', fontFamily: 'var(--font-heading)', fontSize: '1.4rem' }}>Reporte Ejecutivo — Retiro Espiritual 2026</h2>
+                                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>U.E. Fiscomisional San Antonio de Padua & Metanoiia</p>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ lineHeight: '1.75', color: 'var(--color-text)', fontSize: '0.92rem' }}>
+                                        {parseReportBlocks(aiReport.text).map((block, idx) => {
+                                            if (block.type === 'spacer') return <div key={idx} style={{ height: '6px' }} />;
+
+                                            if (block.type === 'header') return (
+                                                <div key={idx} style={{ marginTop: '2.2rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0' }}>
+                                                    <div style={{ width: '4px', alignSelf: 'stretch', background: 'var(--color-padua-gold)', borderRadius: '4px', flexShrink: 0, marginRight: '12px' }} />
+                                                    <div style={{ flex: 1, padding: '10px 18px', background: 'linear-gradient(90deg, var(--color-primary) 0%, #6B3219 100%)', borderRadius: '8px', color: '#fff', fontWeight: 800, fontSize: '0.9rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                                                        {block.text}
+                                                    </div>
+                                                </div>
+                                            );
+
+                                            if (block.type === 'bullet') return (
+                                                <div key={idx} style={{ display: 'flex', gap: '10px', paddingLeft: '8px', marginBottom: '6px', alignItems: 'flex-start' }}>
+                                                    <span style={{ color: 'var(--color-padua-gold)', fontWeight: 900, fontSize: '1rem', flexShrink: 0, marginTop: '1px' }}>▸</span>
+                                                    <span>{renderInlineMd(block.text, `b${idx}`)}</span>
+                                                </div>
+                                            );
+
+                                            if (block.type === 'numbered') return (
+                                                <div key={idx} style={{ display: 'flex', gap: '12px', paddingLeft: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
+                                                    <span style={{ minWidth: '26px', height: '26px', background: 'var(--color-primary)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 800, flexShrink: 0, marginTop: '1px' }}>{block.num}</span>
+                                                    <span style={{ paddingTop: '3px' }}>{renderInlineMd(block.text, `n${idx}`)}</span>
+                                                </div>
+                                            );
+
+                                            if (block.type === 'table') return (
+                                                <div key={idx} style={{ overflowX: 'auto', margin: '1rem 0', borderRadius: '10px', border: '1px solid var(--border-soft)', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}>
+                                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                                        <tbody>
+                                                            {block.rows.map((row, ri) => (
+                                                                <tr key={ri} style={{ background: ri === 0 ? 'var(--color-primary)' : ri % 2 === 0 ? '#FDFAF5' : '#fff', borderBottom: '1px solid var(--border-soft)' }}>
+                                                                    {row.map((cell, ci) => (
+                                                                        ri === 0
+                                                                            ? <th key={ci} style={{ padding: '10px 14px', textAlign: 'left', color: '#fff', fontWeight: 700, fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{cell.replace(/\*\*/g, '')}</th>
+                                                                            : <td key={ci} style={{ padding: '8px 14px', color: 'var(--color-text)' }}>{renderInlineMd(cell, `t${idx}-${ri}-${ci}`)}</td>
+                                                                    ))}
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            );
+
+                                            // paragraph
+                                            return (
+                                                <p key={idx} style={{ marginBottom: '8px', marginTop: 0 }}>{renderInlineMd(block.text, `p${idx}`)}</p>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Lista de Participantes */}
+                                <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--border-soft)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                                    <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-warm)' }}>
+                                        <h3 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            👥 Lista de Participantes <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-muted)', background: 'var(--bg-dashboard)', padding: '2px 10px', borderRadius: '12px' }}>{registros.length} inscritos</span>
+                                        </h3>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Ordenado alfabéticamente</span>
+                                    </div>
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem' }}>
+                                            <thead>
+                                                <tr style={{ background: 'var(--bg-dashboard)' }}>
+                                                    {['#', 'Estudiante', 'Cédula', 'Curso', 'Género', 'Representante', 'Teléfono', 'Email', 'Salud'].map(h => (
+                                                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {[...registros]
+                                                    .sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''))
+                                                    .map((item, idx) => (
+                                                        <tr key={item.id} style={{ borderBottom: '1px solid var(--border-soft)', background: idx % 2 === 0 ? '#fff' : 'var(--bg-warm)' }}
+                                                            onMouseEnter={(e) => e.currentTarget.style.background = '#FFF8ED'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : 'var(--bg-warm)'}
+                                                        >
+                                                            <td style={{ padding: '8px 14px', fontWeight: 600, color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>{idx + 1}</td>
+                                                            <td style={{ padding: '8px 14px' }}>
+                                                                <div style={{ fontWeight: 600 }}>{item.studentName}</div>
+                                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>{item.age} años</div>
+                                                            </td>
+                                                            <td style={{ padding: '8px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{item.idCard}</td>
+                                                            <td style={{ padding: '8px 14px' }}>
+                                                                <span style={{ background: 'var(--bg-dashboard)', padding: '3px 8px', borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', border: '1px solid var(--border-soft)', whiteSpace: 'nowrap' }}>
+                                                                    {item.grade} <span style={{ color: 'var(--color-secondary)' }}>"{item.parallel}"</span>
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ padding: '8px 14px' }}>
+                                                                <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 600, background: item.gender === 'Masculino' ? '#EFF6FF' : '#FDF2F8', color: item.gender === 'Masculino' ? '#2563EB' : '#9D174D' }}>
+                                                                    {item.gender === 'Masculino' ? '♂ M' : '♀ F'}
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ padding: '8px 14px' }}>
+                                                                <div>{item.guardianName}</div>
+                                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>{item.guardianRelation}</div>
+                                                            </td>
+                                                            <td style={{ padding: '8px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{item.guardianPhone}</td>
+                                                            <td style={{ padding: '8px 14px', fontSize: '0.78rem', color: 'var(--color-text-light)' }}>{item.guardianEmail || '-'}</td>
+                                                            <td style={{ padding: '8px 14px' }}>
+                                                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                                                    {item.hasInsurance && <span title={`Seguro: ${item.insuranceType}`} style={{ padding: '2px 6px', background: '#DCFCE7', color: '#15803D', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>🛡️</span>}
+                                                                    {item.hasAllergies && <span title={item.allergiesDetail} style={{ padding: '2px 6px', background: '#FEF3C7', color: '#D97706', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>⚠️</span>}
+                                                                    {item.hasMedication && <span title={item.medicationDetail} style={{ padding: '2px 6px', background: '#FEE2E2', color: '#DC2626', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 600 }}>💊</span>}
+                                                                    {item.bloodType && <span style={{ padding: '2px 6px', background: '#FEE2E2', color: '#DC2626', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700 }}>{item.bloodType}</span>}
+                                                                    {!item.hasInsurance && !item.hasAllergies && !item.hasMedication && <span style={{ color: '#9CA3AF', fontSize: '0.75rem' }}>—</span>}
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* Estado vacío — sin reporte generado aún */}
+                        {!aiReport && !aiLoading && !aiError && (
+                            <div style={{ background: '#fff', borderRadius: '16px', padding: '4rem 2rem', textAlign: 'center', border: '2px dashed var(--border-soft)' }}>
+                                <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🤖</div>
+                                <h3 style={{ color: 'var(--color-primary)', marginBottom: '0.5rem' }}>Reporte Inteligente</h3>
+                                <p style={{ color: 'var(--color-text-muted)', maxWidth: '440px', margin: '0 auto', fontSize: '0.92rem', lineHeight: 1.6 }}>
+                                    Ingresa tu API Key de OpenAI arriba y presiona <strong>"Generar Reporte IA"</strong> para obtener un análisis completo y detallado de todas las inscripciones del retiro.
+                                </p>
+                                <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                                    {['📊 Análisis demográfico', '🏥 Informe médico', '📚 Distribución académica', '✅ Estado de autorizaciones', '💡 Recomendaciones', '👥 Lista de participantes'].map(f => (
+                                        <span key={f} style={{ padding: '6px 14px', background: 'var(--bg-warm)', borderRadius: '20px', fontSize: '0.82rem', color: 'var(--color-text-muted)', border: '1px solid var(--border-soft)' }}>{f}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
