@@ -506,7 +506,7 @@ const AdminPanel = () => {
             Swal.fire({ icon: 'warning', title: 'API Key requerida', text: 'Ingresa tu API Key de Groq para generar el reporte.', confirmButtonColor: '#C9A84C' });
             return;
         }
-        if (registros.length === 0) {
+        if (uniqueRegistros.length === 0) {
             Swal.fire({ icon: 'info', title: 'Sin datos', text: 'No hay registros para analizar.', confirmButtonColor: '#C9A84C' });
             return;
         }
@@ -515,40 +515,40 @@ const AdminPanel = () => {
         setAiError(null);
         setAiReport(null);
 
-        // Construir resumen de datos para el prompt
-        const totalInscritos = stats.total;
+        // Construir resumen de datos para el prompt (usando registros únicos, sin duplicados)
+        const totalInscritos = uniqueStats.total;
         const fechaReporte = new Date().toLocaleDateString('es-EC', { year: 'numeric', month: 'long', day: 'numeric' });
-        const primerRegistro = registros.length > 0 && registros[registros.length - 1]?.createdAt?.seconds
-            ? new Date(registros[registros.length - 1].createdAt.seconds * 1000).toLocaleDateString('es-EC')
+        const primerRegistro = uniqueRegistros.length > 0 && uniqueRegistros[uniqueRegistros.length - 1]?.createdAt?.seconds
+            ? new Date(uniqueRegistros[uniqueRegistros.length - 1].createdAt.seconds * 1000).toLocaleDateString('es-EC')
             : 'N/A';
-        const ultimoRegistro = registros[0]?.createdAt?.seconds
-            ? new Date(registros[0].createdAt.seconds * 1000).toLocaleDateString('es-EC')
+        const ultimoRegistro = uniqueRegistros[0]?.createdAt?.seconds
+            ? new Date(uniqueRegistros[0].createdAt.seconds * 1000).toLocaleDateString('es-EC')
             : 'N/A';
 
-        const cursosList = Object.entries(stats.byCourse || {})
+        const cursosList = Object.entries(uniqueStats.byCourse || {})
             .sort((a, b) => b[1] - a[1])
             .map(([c, n]) => `${c}: ${n} estudiantes (${((n / totalInscritos) * 100).toFixed(1)}%)`)
             .join(', ');
 
-        const bloodList = Object.entries(stats.bloodTypes || {})
+        const bloodList = Object.entries(uniqueStats.bloodTypes || {})
             .sort((a, b) => b[1] - a[1])
             .map(([t, n]) => `${t}: ${n}`)
             .join(', ');
 
-        const insuranceList = stats.topInsurances?.map(([name, n]) => `${name}: ${n}`).join(', ') || 'Sin datos';
+        const insuranceList = uniqueStats.topInsurances?.map(([name, n]) => `${name}: ${n}`).join(', ') || 'Sin datos';
 
-        const velocityDays = Object.entries(stats.velocity || {})
+        const velocityDays = Object.entries(uniqueStats.velocity || {})
             .slice(-10)
             .map(([d, n]) => `${d}: ${n} insc.`)
             .join(', ');
 
-        const allergiesDetail = registros
+        const allergiesDetail = uniqueRegistros
             .filter(r => r.hasAllergies && r.allergiesDetail)
             .map(r => r.allergiesDetail?.trim())
             .filter(Boolean)
             .join('; ') || 'No reportadas';
 
-        const medicationDetail = registros
+        const medicationDetail = uniqueRegistros
             .filter(r => r.hasMedication && r.medicationDetail)
             .map(r => r.medicationDetail?.trim())
             .filter(Boolean)
@@ -563,25 +563,25 @@ DATOS GENERALES
 - Total de inscritos: ${totalInscritos}
 - Primer registro: ${primerRegistro}
 - Último registro: ${ultimoRegistro}
-- Hombres: ${stats.men} (${((stats.men / totalInscritos) * 100).toFixed(1)}%)
-- Mujeres: ${stats.women} (${((stats.women / totalInscritos) * 100).toFixed(1)}%)
-- Edad promedio: ${stats.averageAge} años
+- Hombres: ${uniqueStats.men} (${((uniqueStats.men / totalInscritos) * 100).toFixed(1)}%)
+- Mujeres: ${uniqueStats.women} (${((uniqueStats.women / totalInscritos) * 100).toFixed(1)}%)
+- Edad promedio: ${uniqueStats.averageAge} años
 
 DISTRIBUCIÓN DE EDADES:
-${Object.entries(stats.byAge || {}).map(([r, n]) => `  • ${r} años: ${n} estudiantes`).join('\n')}
+${Object.entries(uniqueStats.byAge || {}).map(([r, n]) => `  • ${r} años: ${n} estudiantes`).join('\n')}
 
 DISTRIBUCIÓN ACADÉMICA (por curso):
-${Object.entries(stats.byCourse || {}).sort((a, b) => b[1] - a[1]).map(([c, n]) => `  • ${c}: ${n} estudiantes`).join('\n')}
+${Object.entries(uniqueStats.byCourse || {}).sort((a, b) => b[1] - a[1]).map(([c, n]) => `  • ${c}: ${n} estudiantes`).join('\n')}
 
 ═══════════════════════════════════════════
 SALUD Y DATOS MÉDICOS
 ═══════════════════════════════════════════
-- Con seguro médico: ${stats.insurance} (${((stats.insurance / totalInscritos) * 100).toFixed(1)}%)
-- Sin seguro médico: ${totalInscritos - stats.insurance} (${(((totalInscritos - stats.insurance) / totalInscritos) * 100).toFixed(1)}%)
+- Con seguro médico: ${uniqueStats.insurance} (${((uniqueStats.insurance / totalInscritos) * 100).toFixed(1)}%)
+- Sin seguro médico: ${totalInscritos - uniqueStats.insurance} (${(((totalInscritos - uniqueStats.insurance) / totalInscritos) * 100).toFixed(1)}%)
 - Principales aseguradoras: ${insuranceList}
-- Con alergias reportadas: ${stats.allergies} (${((stats.allergies / totalInscritos) * 100).toFixed(1)}%)
+- Con alergias reportadas: ${uniqueStats.allergies} (${((uniqueStats.allergies / totalInscritos) * 100).toFixed(1)}%)
   Detalle alergias: ${allergiesDetail}
-- Con medicación activa: ${stats.medication} (${((stats.medication / totalInscritos) * 100).toFixed(1)}%)
+- Con medicación activa: ${uniqueStats.medication} (${((uniqueStats.medication / totalInscritos) * 100).toFixed(1)}%)
   Detalle medicamentos: ${medicationDetail}
 - Tipos de sangre presentes: ${bloodList}
 
@@ -593,11 +593,11 @@ ${velocityDays}
 ═══════════════════════════════════════════
 COMPROMISOS Y AUTORIZACIONES
 ═══════════════════════════════════════════
-- Aceptaron normas de convivencia: ${registros.filter(r => r.acceptedRules).length}/${totalInscritos}
-- Autorizaron exoneración médica: ${registros.filter(r => r.acceptedLiability).length}/${totalInscritos}
-- Autorizaron uso de imagen: ${registros.filter(r => r.acceptedMedia).length}/${totalInscritos}
-- Aceptaron habeas data: ${registros.filter(r => r.habeasData).length}/${totalInscritos}
-- Con firma digital: ${registros.filter(r => r.signature).length}/${totalInscritos}
+- Aceptaron normas de convivencia: ${uniqueRegistros.filter(r => r.acceptedRules).length}/${totalInscritos}
+- Autorizaron exoneración médica: ${uniqueRegistros.filter(r => r.acceptedLiability).length}/${totalInscritos}
+- Autorizaron uso de imagen: ${uniqueRegistros.filter(r => r.acceptedMedia).length}/${totalInscritos}
+- Aceptaron habeas data: ${uniqueRegistros.filter(r => r.habeasData).length}/${totalInscritos}
+- Con firma digital: ${uniqueRegistros.filter(r => r.signature).length}/${totalInscritos}
 
 FORMATO DE SALIDA — MUY IMPORTANTE:
 - Usa ## para los títulos de cada sección (ejemplo: ## 1. RESUMEN EJECUTIVO)
@@ -819,7 +819,7 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
         sectionBar('LISTA COMPLETA DE PARTICIPANTES');
 
         D.setFontSize(8); D.setTextColor(...cMuted);
-        D.text(`Total: ${registros.length}  ·  Hombres: ${stats.men}  ·  Mujeres: ${stats.women}  ·  Con seguro: ${stats.insurance}  ·  Con alergias: ${stats.allergies}  ·  Con medicación: ${stats.medication}`, M, y);
+        D.text(`Total: ${uniqueRegistros.length}  ·  Hombres: ${uniqueStats.men}  ·  Mujeres: ${uniqueStats.women}  ·  Con seguro: ${uniqueStats.insurance}  ·  Con alergias: ${uniqueStats.allergies}  ·  Con medicación: ${uniqueStats.medication}`, M, y);
         y += 8;
 
         const pCols = ['#', 'Nombre del Estudiante', 'Cédula', 'Curso', 'G', 'Representante / Tel.', 'Salud'];
@@ -835,7 +835,7 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
         };
         drawTableHeader();
 
-        [...registros].sort((a, b) => (a.studentName || '').localeCompare(b.studentName || '')).forEach((r, idx) => {
+        [...uniqueRegistros].sort((a, b) => (a.studentName || '').localeCompare(b.studentName || '')).forEach((r, idx) => {
             if (y > 278) { D.addPage(); y = 16; drawTableHeader(); }
             if (idx % 2 === 0) { D.setFillColor(252, 250, 246); } else { D.setFillColor(255, 255, 255); }
             D.rect(M, y - 5, CW, 7, 'F');
@@ -929,6 +929,43 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
         const extraEntries = groups.reduce((s, g) => s + g.length - 1, 0);
         return { groups, totalEntries, extraEntries, groupCount: groups.length };
     }, [registros]);
+
+    // Unique (deduplicated) registros — keeps most recent per student (registros already desc-sorted)
+    const uniqueRegistros = React.useMemo(() => {
+        const seen = new Set();
+        return registros.filter(r => {
+            const key = (r.idCard || '').replace(/\s/g, '').toLowerCase()
+                || (r.studentName || '').trim().toLowerCase();
+            if (!key) return true;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        });
+    }, [registros]);
+
+    // Stats computed from unique registros only (for AI Report)
+    const uniqueStats = React.useMemo(() => {
+        const total = uniqueRegistros.length;
+        if (total === 0) return { total: 0, men: 0, women: 0, allergies: 0, medication: 0, insurance: 0, velocity: {}, averageAge: 0, byAge: {}, byCourse: {}, topInsurances: [], bloodTypes: {} };
+        let men = 0, women = 0, allergies = 0, medication = 0, insurance = 0, sumAge = 0;
+        const byCourse = {}, byAge = {}, bloodTypes = {}, insurances = {}, velocity = {};
+        uniqueRegistros.forEach(r => {
+            if (r.gender === 'Masculino') men++;
+            else if (r.gender === 'Femenino') women++;
+            if (r.hasAllergies) allergies++;
+            if (r.hasMedication) medication++;
+            if (r.hasInsurance) { insurance++; const type = r.insuranceType?.trim() || 'No especificado'; insurances[type] = (insurances[type] || 0) + 1; }
+            const course = r.grade || 'Sin Asignar';
+            byCourse[course] = (byCourse[course] || 0) + 1;
+            if (r.age) { const age = parseInt(r.age); if (!isNaN(age)) { sumAge += age; const range = age < 12 ? '<12' : age <= 14 ? '12-14' : age <= 16 ? '15-16' : '17+'; byAge[range] = (byAge[range] || 0) + 1; } }
+            if (r.bloodType) { bloodTypes[r.bloodType] = (bloodTypes[r.bloodType] || 0) + 1; }
+            if (r.createdAt?.seconds) { const date = new Date(r.createdAt.seconds * 1000).toISOString().split('T')[0]; velocity[date] = (velocity[date] || 0) + 1; }
+        });
+        const topInsurances = Object.entries(insurances).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        const averageAge = total > 0 && sumAge > 0 ? (sumAge / total).toFixed(1) : 0;
+        const sortedVelocity = Object.keys(velocity).sort().reduce((obj, key) => { obj[key] = velocity[key]; return obj; }, {});
+        return { total, men, women, allergies, medication, insurance, byCourse, byAge, bloodTypes, topInsurances, velocity: sortedVelocity, averageAge };
+    }, [uniqueRegistros]);
 
     // Statistics Calculation
     const stats = React.useMemo(() => {
@@ -1566,7 +1603,7 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                                 🤖 Generador de Reporte con Inteligencia Artificial
                             </h3>
                             <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', fontSize: '0.92rem', lineHeight: 1.6 }}>
-                                Genera un reporte ejecutivo completo y detallado analizando todos los <strong>{registros.length} inscritos</strong> del Retiro Espiritual 2026.
+                                Genera un reporte ejecutivo completo y detallado analizando los <strong>{uniqueRegistros.length} inscritos únicos</strong> del Retiro Espiritual 2026 (sin duplicados).
                                 El análisis incluye demografía, datos médicos, tendencias de inscripción y recomendaciones para el equipo organizador.
                             </p>
 
@@ -1738,7 +1775,7 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                                 <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid var(--border-soft)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
                                     <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-warm)' }}>
                                         <h3 style={{ margin: 0, color: 'var(--color-primary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            👥 Lista de Participantes <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-muted)', background: 'var(--bg-dashboard)', padding: '2px 10px', borderRadius: '12px' }}>{registros.length} inscritos</span>
+                                            👥 Lista de Participantes <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--color-text-muted)', background: 'var(--bg-dashboard)', padding: '2px 10px', borderRadius: '12px' }}>{uniqueRegistros.length} inscritos únicos</span>
                                         </h3>
                                         <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Ordenado alfabéticamente</span>
                                     </div>
@@ -1752,7 +1789,7 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {[...registros]
+                                                {[...uniqueRegistros]
                                                     .sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''))
                                                     .map((item, idx) => (
                                                         <tr key={item.id} style={{ borderBottom: '1px solid var(--border-soft)', background: idx % 2 === 0 ? '#fff' : 'var(--bg-warm)' }}
