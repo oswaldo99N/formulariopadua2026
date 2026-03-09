@@ -514,6 +514,143 @@ const AdminPanel = () => {
         document.body.removeChild(a);
     };
 
+    const downloadSaludCSV = () => {
+        const headers = ["Tipo", "Estudiante", "Cédula", "Género", "Edad", "Curso", "Paralelo", "Tipo de Sangre", "Detalle Alergia", "Medicamento/Detalle", "Tiene Seguro", "Tipo Seguro", "Representante", "Parentesco", "Teléfono Emergencia"];
+        const csvRows = [headers.join(",")];
+        const conCondicion = uniqueRegistros.filter(r => r.hasAllergies || r.hasMedication)
+            .sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+        conCondicion.forEach(r => {
+            const tipo = r.hasAllergies && r.hasMedication ? 'Alergia + Medicación' : r.hasAllergies ? 'Alergia' : 'Medicación';
+            const values = [
+                `"${tipo}"`,
+                `"${r.studentName || ''}"`,
+                r.idCard || '',
+                r.gender || '',
+                r.age || '',
+                r.grade || '',
+                r.parallel || '',
+                r.bloodType || '',
+                `"${r.hasAllergies ? (r.allergiesDetail || 'No especificado') : '—'}"`,
+                `"${r.hasMedication ? (r.medicationDetail || 'No especificado') : '—'}"`,
+                r.hasInsurance ? 'Sí' : 'No',
+                r.insuranceType || '',
+                `"${r.guardianName || ''}"`,
+                r.guardianRelation || '',
+                r.emergencyPhone || r.guardianPhone || ''
+            ];
+            csvRows.push(values.join(","));
+        });
+        const blob = new Blob(["\uFEFF" + csvRows.join("\n")], { type: "text/csv;charset=utf-8;" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.setAttribute("href", url);
+        a.setAttribute("download", `salud_medica_padua_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
+    const downloadSaludPDF = async () => {
+        const D = new jsPDF();
+        const cPri = [59, 35, 20], cGold = [201, 168, 76], cText = [40, 40, 40];
+        const cWhite = [255, 255, 255], cLite = [255, 251, 240];
+        const M = 10, CW = 190;
+        let y = 0;
+
+        const drawPageHeader = () => {
+            D.setFillColor(...cPri); D.rect(0, 0, 210, 26, 'F');
+            D.setFillColor(...cGold); D.rect(0, 26, 210, 1.2, 'F');
+            D.setFont('helvetica', 'bold'); D.setTextColor(...cWhite); D.setFontSize(12);
+            D.text('INFORME MÉDICO — RETIRO ESPIRITUAL 2026', 105, 11, null, null, 'center');
+            D.setFont('helvetica', 'normal'); D.setFontSize(7.5);
+            D.text(`U.E. Fiscomisional San Antonio de Padua & Metanoiia · Generado: ${new Date().toLocaleDateString('es-EC')}`, 105, 20, null, null, 'center');
+        };
+
+        const loadImg = (src) => new Promise((res, rej) => { const i = new Image(); i.src = src; i.onload = () => res(i); i.onerror = rej; });
+        try {
+            const [imgPadua, imgMeta] = await Promise.all([loadImg(logoPadua), loadImg(logoMetanoiia)]);
+            drawPageHeader();
+            D.addImage(imgPadua, 'JPEG', 2, 2, 22, 22);
+            const mW = imgMeta.naturalWidth || 1, mH = imgMeta.naturalHeight || 1;
+            let rW = 40, rH = 40 * mH / mW;
+            if (rH > 22) { rH = 22; rW = 22 * mW / mH; }
+            D.addImage(imgMeta, 'PNG', 168 + (40 - rW) / 2, (26 - rH) / 2, rW, rH);
+        } catch (e) { drawPageHeader(); }
+        y = 34;
+
+        const conAlergias = [...uniqueRegistros].filter(r => r.hasAllergies).sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+        const conMedicacion = [...uniqueRegistros].filter(r => r.hasMedication).sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+
+        const sectionHdr = (title, color) => {
+            if (y > 258) { D.addPage(); y = 16; }
+            D.setFillColor(...color); D.rect(M, y - 5, CW, 9, 'F');
+            D.setFont('helvetica', 'bold'); D.setFontSize(9); D.setTextColor(...cWhite);
+            D.text(title, M + 3, y);
+            y += 10;
+            D.setFont('helvetica', 'normal'); D.setTextColor(...cText);
+        };
+
+        const drawTableHdr = (cols, widths, bgColor) => {
+            D.setFillColor(...bgColor); D.rect(M, y - 5.5, CW, 8, 'F');
+            D.setFont('helvetica', 'bold'); D.setFontSize(7); D.setTextColor(...cWhite);
+            let px = M + 1;
+            cols.forEach((h, i) => { D.text(h, px, y); px += widths[i]; });
+            y += 7;
+            D.setFont('helvetica', 'normal'); D.setFontSize(7.5); D.setTextColor(...cText);
+        };
+
+        // ── Resumen ──
+        D.setFont('helvetica', 'bold'); D.setFontSize(9); D.setTextColor(...cPri);
+        D.text(`Resumen: ${conAlergias.length} con alergias  ·  ${conMedicacion.length} con medicación  ·  ${uniqueRegistros.filter(r => r.hasAllergies && r.hasMedication).length} con ambas condiciones`, M, y);
+        y += 10;
+
+        // ── Tabla Alergias ──
+        if (conAlergias.length > 0) {
+            sectionHdr(`⚠  ALERGIAS (${conAlergias.length} estudiantes)`, [200, 110, 20]);
+            const aCols = ['#', 'Estudiante', 'Cédula', 'Curso', 'Sangre', 'Detalle de la Alergia', 'Representante', 'Tel. Emergencia'];
+            const aW = [6, 42, 20, 18, 10, 50, 30, 24];
+            drawTableHdr(aCols, aW, [200, 130, 30]);
+            conAlergias.forEach((r, idx) => {
+                if (y > 278) { D.addPage(); y = 16; drawTableHdr(aCols, aW, [200, 130, 30]); }
+                if (idx % 2 === 0) { D.setFillColor(255, 251, 235); } else { D.setFillColor(...cWhite); }
+                D.rect(M, y - 5, CW, 7, 'F');
+                const row = [String(idx + 1), (r.studentName || '').substring(0, 22), r.idCard || '', `${r.grade || ''}"${r.parallel || ''}"`, r.bloodType || '—', (r.allergiesDetail || 'Sin detalle').substring(0, 28), (r.guardianName || '').substring(0, 18), r.emergencyPhone || r.guardianPhone || '—'];
+                let px = M + 1;
+                row.forEach((v, vi) => { D.text(v, px, y); px += aW[vi]; });
+                D.setDrawColor(240, 220, 180); D.setLineWidth(0.1); D.line(M, y + 2, M + CW, y + 2);
+                y += 7;
+            });
+            y += 6;
+        }
+
+        // ── Tabla Medicación ──
+        if (conMedicacion.length > 0) {
+            if (y > 220) { D.addPage(); y = 16; }
+            sectionHdr(`💊  MEDICACIÓN ACTIVA (${conMedicacion.length} estudiantes)`, [160, 30, 30]);
+            const mCols = ['#', 'Estudiante', 'Cédula', 'Curso', 'Sangre', 'Medicamento / Detalle', '¿Alergias?', 'Representante', 'Tel. Emergencia'];
+            const mW = [6, 36, 18, 16, 10, 44, 20, 26, 24];
+            drawTableHdr(mCols, mW, [190, 40, 40]);
+            conMedicacion.forEach((r, idx) => {
+                if (y > 278) { D.addPage(); y = 16; drawTableHdr(mCols, mW, [190, 40, 40]); }
+                if (idx % 2 === 0) { D.setFillColor(255, 245, 245); } else { D.setFillColor(...cWhite); }
+                D.rect(M, y - 5, CW, 7, 'F');
+                const row = [String(idx + 1), (r.studentName || '').substring(0, 20), r.idCard || '', `${r.grade || ''}"${r.parallel || ''}"`, r.bloodType || '—', (r.medicationDetail || 'Sin detalle').substring(0, 24), r.hasAllergies ? 'Sí' : 'No', (r.guardianName || '').substring(0, 15), r.emergencyPhone || r.guardianPhone || '—'];
+                let px = M + 1;
+                row.forEach((v, vi) => { D.text(v, px, y); px += mW[vi]; });
+                D.setDrawColor(240, 200, 200); D.setLineWidth(0.1); D.line(M, y + 2, M + CW, y + 2);
+                y += 7;
+            });
+        }
+
+        const pages = D.internal.getNumberOfPages();
+        for (let p = 1; p <= pages; p++) {
+            D.setPage(p);
+            D.setFontSize(6); D.setTextColor(170);
+            D.text(`Informe Médico · Retiro Espiritual 2026 · U.E. Fiscomisional San Antonio de Padua · Pág ${p}/${pages}`, 105, 293, null, null, 'center');
+        }
+        D.save(`Informe_Medico_Retiro_2026_${new Date().toISOString().split('T')[0]}.pdf`);
+    };
+
     // ── AI REPORT ────────────────────────────────────────────
     const generateAIReport = async () => {
         if (!apiKey.trim()) {
@@ -1092,15 +1229,25 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                         </p>
                     </div>
                     <div className="admin-header-actions">
-                        <button onClick={downloadAllPDFs} className="btn-primary" style={{ padding: '12px 24px', fontSize: '0.9rem', boxShadow: 'var(--shadow-lg)' }}>
-                            📄 Descargar Fichas (PDF)
-                        </button>
-                        <button onClick={downloadCSV} className="btn-secondary" style={{ padding: '12px 24px', fontSize: '0.9rem', background: '#fff' }}>
-                            📥 Exportar CSV
-                        </button>
-                        <button onClick={downloadContactsCSV} className="btn-secondary" style={{ padding: '12px 24px', fontSize: '0.9rem', background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}>
-                            📞 Exportar Contactos
-                        </button>
+                        {(activeTab === 'dashboard' || activeTab === 'inscripciones') && (<>
+                            <button onClick={downloadAllPDFs} className="btn-primary" style={{ padding: '12px 24px', fontSize: '0.9rem', boxShadow: 'var(--shadow-lg)' }}>
+                                📄 Descargar Fichas (PDF)
+                            </button>
+                            <button onClick={downloadCSV} className="btn-secondary" style={{ padding: '12px 24px', fontSize: '0.9rem', background: '#fff' }}>
+                                📥 Exportar CSV
+                            </button>
+                            <button onClick={downloadContactsCSV} className="btn-secondary" style={{ padding: '12px 24px', fontSize: '0.9rem', background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}>
+                                📞 Exportar Contactos
+                            </button>
+                        </>)}
+                        {activeTab === 'salud' && (<>
+                            <button onClick={downloadSaludPDF} className="btn-primary" style={{ padding: '12px 24px', fontSize: '0.9rem', boxShadow: 'var(--shadow-lg)', background: 'linear-gradient(135deg, #D97706, #B45309)' }}>
+                                📄 Descargar PDF Médico
+                            </button>
+                            <button onClick={downloadSaludCSV} className="btn-secondary" style={{ padding: '12px 24px', fontSize: '0.9rem', background: '#FFF7ED', color: '#92400E', border: '1px solid #FED7AA' }}>
+                                📥 Exportar CSV Salud
+                            </button>
+                        </>)}
                     </div>
                 </div>
 
