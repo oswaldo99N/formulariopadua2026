@@ -58,6 +58,20 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => (
             >
                 <span>🤖</span> Reporte IA
             </button>
+            <button
+                onClick={() => setActiveTab('duplicados')}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 16px', borderRadius: '12px',
+                    background: activeTab === 'duplicados' ? 'rgba(239,68,68,0.2)' : 'transparent',
+                    color: activeTab === 'duplicados' ? '#FCA5A5' : 'rgba(255,255,255,0.7)',
+                    border: activeTab === 'duplicados' ? '1px solid rgba(239,68,68,0.35)' : 'none',
+                    textAlign: 'left', fontSize: '0.9rem', fontWeight: 500,
+                    transition: 'all 0.2s', cursor: 'pointer'
+                }}
+            >
+                <span>🔁</span> Duplicados
+            </button>
         </nav>
 
         <button
@@ -898,6 +912,24 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
         return (matchName || matchId || matchPhone) && matchCourse && matchGender && matchParallel && matchDate;
     });
 
+    // Duplicates Calculation
+    const duplicates = React.useMemo(() => {
+        const byKey = {};
+        registros.forEach(r => {
+            const key = (r.idCard || '').replace(/\s/g, '').toLowerCase()
+                || (r.studentName || '').trim().toLowerCase();
+            if (!key) return;
+            if (!byKey[key]) byKey[key] = [];
+            byKey[key].push(r);
+        });
+        const groups = Object.values(byKey)
+            .filter(g => g.length > 1)
+            .map(g => [...g].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0)));
+        const totalEntries = groups.reduce((s, g) => s + g.length, 0);
+        const extraEntries = groups.reduce((s, g) => s + g.length - 1, 0);
+        return { groups, totalEntries, extraEntries, groupCount: groups.length };
+    }, [registros]);
+
     // Statistics Calculation
     const stats = React.useMemo(() => {
         const total = registros.length;
@@ -1002,10 +1034,10 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                 <div className="admin-header">
                     <div>
                         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>
-                            {activeTab === 'dashboard' ? 'Panel General' : activeTab === 'inscripciones' ? 'Gestión de Inscripciones' : 'Reporte Inteligente IA'}
+                            {activeTab === 'dashboard' ? 'Panel General' : activeTab === 'inscripciones' ? 'Gestión de Inscripciones' : activeTab === 'duplicados' ? 'Revisión de Duplicados' : 'Reporte Inteligente IA'}
                         </h1>
                         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
-                            {activeTab === 'dashboard' ? 'Resumen estadístico del retiro 2026.' : activeTab === 'inscripciones' ? 'Administra y exporta los registros de estudiantes.' : 'Genera un reporte ejecutivo completo con análisis de IA.'}
+                            {activeTab === 'dashboard' ? 'Resumen estadístico del retiro 2026.' : activeTab === 'inscripciones' ? 'Administra y exporta los registros de estudiantes.' : activeTab === 'duplicados' ? `Detecta y gestiona registros duplicados. ${duplicates.groupCount} grupo(s) detectado(s).` : 'Genera un reporte ejecutivo completo con análisis de IA.'}
                         </p>
                     </div>
                     <div className="admin-header-actions">
@@ -1148,6 +1180,28 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                             </div>
 
                         </div>
+
+                        {/* DUPLICATES ALERT */}
+                        {duplicates.groupCount > 0 && (
+                            <div
+                                style={{ marginTop: '2rem', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '14px', padding: '1.2rem 1.5rem', display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer' }}
+                                onClick={() => setActiveTab('duplicados')}
+                            >
+                                <span style={{ fontSize: '1.8rem', flexShrink: 0 }}>⚠️</span>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 700, color: '#991B1B', fontSize: '1rem', marginBottom: '2px' }}>
+                                        Se detectaron <strong>{duplicates.groupCount}</strong> grupo(s) de registros duplicados
+                                        &nbsp;·&nbsp; <strong>{duplicates.extraEntries}</strong> registro(s) extra en total
+                                    </div>
+                                    <div style={{ fontSize: '0.82rem', color: '#B91C1C' }}>
+                                        Haz clic aquí para revisar y eliminar los duplicados en la pestaña correspondiente.
+                                    </div>
+                                </div>
+                                <span style={{ background: '#DC2626', color: '#fff', borderRadius: '20px', padding: '4px 14px', fontWeight: 700, fontSize: '0.85rem', flexShrink: 0 }}>
+                                    Ver duplicados →
+                                </span>
+                            </div>
+                        )}
 
                         {/* 5. Health Summary (Restyled) */}
                         <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
@@ -1328,6 +1382,177 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                                 </table>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* ══ TAB: DUPLICADOS ══════════════════════════════ */}
+                {activeTab === 'duplicados' && (
+                    <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
+
+                        {/* Resumen superior */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
+                            <div style={{ background: duplicates.groupCount > 0 ? '#FEF2F2' : '#F0FDF4', border: `1px solid ${duplicates.groupCount > 0 ? '#FECACA' : '#BBF7D0'}`, borderRadius: '14px', padding: '1.5rem' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: duplicates.groupCount > 0 ? '#DC2626' : '#16A34A', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+                                    {duplicates.groupCount}
+                                </div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, marginTop: '6px', color: duplicates.groupCount > 0 ? '#991B1B' : '#15803D' }}>
+                                    🔁 Grupos de Duplicados
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '4px' }}>
+                                    Estudiantes con más de 1 registro
+                                </div>
+                            </div>
+                            <div style={{ background: duplicates.extraEntries > 0 ? '#FFF7ED' : '#F0FDF4', border: `1px solid ${duplicates.extraEntries > 0 ? '#FED7AA' : '#BBF7D0'}`, borderRadius: '14px', padding: '1.5rem' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: duplicates.extraEntries > 0 ? '#D97706' : '#16A34A', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+                                    {duplicates.extraEntries}
+                                </div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, marginTop: '6px', color: duplicates.extraEntries > 0 ? '#92400E' : '#15803D' }}>
+                                    📋 Registros Extra (copia)
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '4px' }}>
+                                    Entradas que podrían eliminarse
+                                </div>
+                            </div>
+                            <div style={{ background: '#F0F9FF', border: '1px solid #BAE6FD', borderRadius: '14px', padding: '1.5rem' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#0369A1', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+                                    {duplicates.totalEntries}
+                                </div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, marginTop: '6px', color: '#075985' }}>
+                                    📝 Total en Grupos Dup.
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '4px' }}>
+                                    Registros involucrados en duplicados
+                                </div>
+                            </div>
+                            <div style={{ background: '#F5F3FF', border: '1px solid #DDD6FE', borderRadius: '14px', padding: '1.5rem' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#7C3AED', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>
+                                    {stats.total - duplicates.extraEntries}
+                                </div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, marginTop: '6px', color: '#5B21B6' }}>
+                                    ✅ Registros Únicos
+                                </div>
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '4px' }}>
+                                    Total real de estudiantes inscritos
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Sin duplicados */}
+                        {duplicates.groupCount === 0 && (
+                            <div style={{ background: '#F0FDF4', border: '2px dashed #BBF7D0', borderRadius: '16px', padding: '4rem 2rem', textAlign: 'center' }}>
+                                <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>✅</div>
+                                <h3 style={{ color: '#15803D', marginBottom: '0.5rem' }}>¡Sin duplicados detectados!</h3>
+                                <p style={{ color: '#4B7A57', fontSize: '0.92rem' }}>
+                                    Todos los registros tienen cédulas y nombres únicos. La base de datos está limpia.
+                                </p>
+                            </div>
+                        )}
+
+                        {/* Lista de grupos duplicados */}
+                        {duplicates.groups.map((group, gi) => {
+                            const key = (group[0].idCard || '').replace(/\s/g, '').toLowerCase()
+                                || (group[0].studentName || '').trim().toLowerCase();
+                            return (
+                                <div key={gi} style={{ background: '#fff', border: '1px solid #FECACA', borderRadius: '16px', marginBottom: '1.5rem', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                                    {/* Cabecera del grupo */}
+                                    <div style={{ background: '#FEF2F2', padding: '1rem 1.5rem', borderBottom: '1px solid #FECACA', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                            <span style={{ background: '#DC2626', color: '#fff', padding: '3px 10px', borderRadius: '12px', fontSize: '0.78rem', fontWeight: 700 }}>
+                                                GRUPO #{gi + 1}
+                                            </span>
+                                            <span style={{ fontWeight: 700, color: '#991B1B', fontSize: '1rem' }}>
+                                                {group[0].studentName || '(Sin nombre)'}
+                                            </span>
+                                            {group[0].idCard && (
+                                                <span style={{ fontFamily: 'var(--font-mono)', color: '#B91C1C', fontSize: '0.85rem', background: '#FEE2E2', padding: '2px 10px', borderRadius: '8px' }}>
+                                                    CI: {group[0].idCard}
+                                                </span>
+                                            )}
+                                            <span style={{ fontSize: '0.8rem', color: '#9CA3AF' }}>
+                                                {group.length} registros encontrados
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={async () => {
+                                                const result = await Swal.fire({
+                                                    title: '¿Eliminar duplicados?',
+                                                    html: `Se conservará el registro <strong>más reciente</strong> y se eliminarán <strong>${group.length - 1}</strong> copia(s) de <em>${group[0].studentName}</em>.`,
+                                                    icon: 'warning',
+                                                    showCancelButton: true,
+                                                    confirmButtonColor: '#DC2626',
+                                                    cancelButtonColor: '#C9A84C',
+                                                    confirmButtonText: 'Sí, limpiar duplicados',
+                                                    cancelButtonText: 'Cancelar'
+                                                });
+                                                if (result.isConfirmed) {
+                                                    try {
+                                                        // group[0] es el más reciente (ordenado desc), eliminar el resto
+                                                        const toDelete = group.slice(1);
+                                                        await Promise.all(toDelete.map(r => deleteDoc(doc(db, 'registros', r.id))));
+                                                        setRegistros(prev => prev.filter(r => !toDelete.map(d => d.id).includes(r.id)));
+                                                        Swal.fire({ icon: 'success', title: 'Listo', text: `Se eliminaron ${toDelete.length} registro(s) duplicado(s).`, confirmButtonColor: '#C9A84C', timer: 2500, showConfirmButton: false });
+                                                    } catch (e) {
+                                                        Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar algún registro.', confirmButtonColor: '#C9A84C' });
+                                                    }
+                                                }
+                                            }}
+                                            style={{ padding: '7px 18px', background: '#DC2626', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 700, fontSize: '0.83rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                        >
+                                            🗑️ Conservar reciente · Eliminar {group.length - 1} copia(s)
+                                        </button>
+                                    </div>
+
+                                    {/* Tabla de registros del grupo */}
+                                    <div style={{ overflowX: 'auto' }}>
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.83rem' }}>
+                                            <thead>
+                                                <tr style={{ background: 'var(--bg-dashboard)' }}>
+                                                    {['', 'Fecha Inscripción', 'Nombre Estudiante', 'Cédula', 'Curso', 'Representante', 'Teléfono', 'Email', 'Acción'].map(h => (
+                                                        <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 600, color: 'var(--color-text-muted)', fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {group.map((item, ri) => (
+                                                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border-soft)', background: ri === 0 ? '#F0FDF4' : ri % 2 === 0 ? '#fff' : '#FFF9F9' }}>
+                                                        <td style={{ padding: '10px 14px' }}>
+                                                            {ri === 0
+                                                                ? <span style={{ background: '#DCFCE7', color: '#15803D', padding: '2px 8px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 700, whiteSpace: 'nowrap' }}>✅ Más reciente</span>
+                                                                : <span style={{ background: '#FEE2E2', color: '#DC2626', padding: '2px 8px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 700 }}>Copia {ri}</span>
+                                                            }
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                                                            {item.createdAt?.seconds ? new Date(item.createdAt.seconds * 1000).toLocaleString() : '—'}
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px', fontWeight: 600 }}>{item.studentName}</td>
+                                                        <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{item.idCard || '—'}</td>
+                                                        <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                                                            <span style={{ background: 'var(--bg-dashboard)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.78rem', fontWeight: 600, border: '1px solid var(--border-soft)' }}>
+                                                                {item.grade} <span style={{ color: 'var(--color-secondary)' }}>"{item.parallel}"</span>
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ padding: '10px 14px', fontSize: '0.82rem' }}>{item.guardianName || '—'}</td>
+                                                        <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem' }}>{item.guardianPhone || '—'}</td>
+                                                        <td style={{ padding: '10px 14px', fontSize: '0.78rem', color: 'var(--color-text-light)' }}>{item.guardianEmail || '—'}</td>
+                                                        <td style={{ padding: '10px 14px' }}>
+                                                            {ri !== 0 && (
+                                                                <button
+                                                                    onClick={() => handleDelete(item.id)}
+                                                                    style={{ padding: '5px 10px', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA', borderRadius: '6px', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}
+                                                                    title="Eliminar este registro"
+                                                                >
+                                                                    🗑️ Eliminar
+                                                                </button>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 
