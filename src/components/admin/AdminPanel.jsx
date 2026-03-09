@@ -72,6 +72,20 @@ const Sidebar = ({ activeTab, setActiveTab, onLogout }) => (
             >
                 <span>🔁</span> Duplicados
             </button>
+            <button
+                onClick={() => setActiveTab('salud')}
+                style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 16px', borderRadius: '12px',
+                    background: activeTab === 'salud' ? 'rgba(16,185,129,0.18)' : 'transparent',
+                    color: activeTab === 'salud' ? '#6EE7B7' : 'rgba(255,255,255,0.7)',
+                    border: activeTab === 'salud' ? '1px solid rgba(16,185,129,0.35)' : 'none',
+                    textAlign: 'left', fontSize: '0.9rem', fontWeight: 500,
+                    transition: 'all 0.2s', cursor: 'pointer'
+                }}
+            >
+                <span>🏥</span> Salud Médica
+            </button>
         </nav>
 
         <button
@@ -1071,10 +1085,10 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                 <div className="admin-header">
                     <div>
                         <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--color-primary)', fontFamily: 'var(--font-heading)', marginBottom: '0.5rem' }}>
-                            {activeTab === 'dashboard' ? 'Panel General' : activeTab === 'inscripciones' ? 'Gestión de Inscripciones' : activeTab === 'duplicados' ? 'Revisión de Duplicados' : 'Reporte Inteligente IA'}
+                            {activeTab === 'dashboard' ? 'Panel General' : activeTab === 'inscripciones' ? 'Gestión de Inscripciones' : activeTab === 'duplicados' ? 'Revisión de Duplicados' : activeTab === 'salud' ? 'Salud Médica' : 'Reporte Inteligente IA'}
                         </h1>
                         <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem' }}>
-                            {activeTab === 'dashboard' ? 'Resumen estadístico del retiro 2026.' : activeTab === 'inscripciones' ? 'Administra y exporta los registros de estudiantes.' : activeTab === 'duplicados' ? `Detecta y gestiona registros duplicados. ${duplicates.groupCount} grupo(s) detectado(s).` : 'Genera un reporte ejecutivo completo con análisis de IA.'}
+                            {activeTab === 'dashboard' ? 'Resumen estadístico del retiro 2026.' : activeTab === 'inscripciones' ? 'Administra y exporta los registros de estudiantes.' : activeTab === 'duplicados' ? `Detecta y gestiona registros duplicados. ${duplicates.groupCount} grupo(s) detectado(s).` : activeTab === 'salud' ? `Estudiantes con alergias o medicación activa. ${uniqueRegistros.filter(r => r.hasAllergies || r.hasMedication).length} con atención especial.` : 'Genera un reporte ejecutivo completo con análisis de IA.'}
                         </p>
                     </div>
                     <div className="admin-header-actions">
@@ -1421,6 +1435,166 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                         </div>
                     </div>
                 )}
+
+                {/* ══ TAB: SALUD MÉDICA ════════════════════════════ */}
+                {activeTab === 'salud' && (() => {
+                    const conAlergias = [...uniqueRegistros].filter(r => r.hasAllergies).sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+                    const conMedicacion = [...uniqueRegistros].filter(r => r.hasMedication).sort((a, b) => (a.studentName || '').localeCompare(b.studentName || ''));
+                    const conAmbos = uniqueRegistros.filter(r => r.hasAllergies && r.hasMedication);
+                    const sinCondicion = uniqueRegistros.filter(r => !r.hasAllergies && !r.hasMedication);
+                    return (
+                    <div style={{ animation: 'fadeIn 0.5s ease-out' }}>
+                        {/* Tarjetas resumen */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
+                            <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '14px', padding: '1.5rem' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#D97706', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>{conAlergias.length}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#92400E', marginTop: '6px' }}>⚠️ Con Alergias</div>
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '4px' }}>{((conAlergias.length / (uniqueRegistros.length || 1)) * 100).toFixed(1)}% del total</div>
+                            </div>
+                            <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '14px', padding: '1.5rem' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#DC2626', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>{conMedicacion.length}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#991B1B', marginTop: '6px' }}>💊 Con Medicación Activa</div>
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '4px' }}>{((conMedicacion.length / (uniqueRegistros.length || 1)) * 100).toFixed(1)}% del total</div>
+                            </div>
+                            <div style={{ background: '#FFF1F2', border: '1px solid #FECDD3', borderRadius: '14px', padding: '1.5rem' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#BE123C', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>{conAmbos.length}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#9F1239', marginTop: '6px' }}>🔴 Ambas Condiciones</div>
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '4px' }}>Requieren atención prioritaria</div>
+                            </div>
+                            <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '14px', padding: '1.5rem' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 700, color: '#16A34A', fontFamily: 'var(--font-mono)', lineHeight: 1 }}>{sinCondicion.length}</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#15803D', marginTop: '6px' }}>✅ Sin Condiciones</div>
+                                <div style={{ fontSize: '0.78rem', color: '#6B7280', marginTop: '4px' }}>Sin alergias ni medicación</div>
+                            </div>
+                        </div>
+
+                        {/* ── TABLA ALERGIAS ── */}
+                        <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #FED7AA', overflow: 'hidden', boxShadow: 'var(--shadow-sm)', marginBottom: '2.5rem' }}>
+                            <div style={{ background: '#FFF7ED', padding: '1.2rem 1.8rem', borderBottom: '1px solid #FED7AA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                <h3 style={{ margin: 0, color: '#92400E', fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    ⚠️ Estudiantes con Alergias
+                                    <span style={{ background: '#D97706', color: '#fff', fontSize: '0.78rem', padding: '2px 10px', borderRadius: '12px', fontWeight: 700 }}>{conAlergias.length}</span>
+                                </h3>
+                                <span style={{ fontSize: '0.8rem', color: '#B45309' }}>Ordenado alfabéticamente</span>
+                            </div>
+                            {conAlergias.length === 0 ? (
+                                <div style={{ padding: '3rem', textAlign: 'center', color: '#6B7280', fontSize: '0.9rem' }}>✅ Ningún estudiante reportó alergias.</div>
+                            ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
+                                    <thead>
+                                        <tr style={{ background: '#FEF3C7', borderBottom: '1px solid #FED7AA' }}>
+                                            {['#', 'Estudiante', 'Cédula', 'Curso', 'Tipo de Sangre', 'Detalle de la Alergia', 'Representante', 'Tel. Emergencia'].map(h => (
+                                                <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#92400E', fontSize: '0.73rem', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {conAlergias.map((item, idx) => (
+                                            <tr key={item.id} style={{ borderBottom: '1px solid #FEF9EE', background: idx % 2 === 0 ? '#fff' : '#FFFBF0' }}
+                                                onMouseEnter={e => e.currentTarget.style.background = '#FEF9ED'}
+                                                onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#FFFBF0'}>
+                                                <td style={{ padding: '10px 14px', color: '#9CA3AF', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{idx + 1}</td>
+                                                <td style={{ padding: '10px 14px' }}>
+                                                    <div style={{ fontWeight: 700, color: 'var(--color-primary)' }}>{item.studentName}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: '2px' }}>{item.gender === 'Masculino' ? '♂' : '♀'} {item.age} años</div>
+                                                </td>
+                                                <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#6B7280' }}>{item.idCard || '—'}</td>
+                                                <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                                                    <span style={{ background: 'var(--bg-dashboard)', padding: '3px 8px', borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', border: '1px solid var(--border-soft)' }}>
+                                                        {item.grade} <span style={{ color: 'var(--color-secondary)' }}>"{item.parallel}"</span>
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '10px 14px' }}>
+                                                    {item.bloodType ? <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700, background: item.bloodType.includes('+') ? '#FEE2E2' : '#EFF6FF', color: item.bloodType.includes('+') ? '#DC2626' : '#2563EB' }}>{item.bloodType}</span> : <span style={{ color: '#9CA3AF' }}>—</span>}
+                                                </td>
+                                                <td style={{ padding: '10px 14px' }}>
+                                                    <span style={{ background: '#FEF3C7', color: '#92400E', padding: '4px 10px', borderRadius: '8px', fontSize: '0.83rem', fontWeight: 600, display: 'inline-block', border: '1px solid #FDE68A' }}>
+                                                        ⚠️ {item.allergiesDetail || 'Sin detalle especificado'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '10px 14px', fontSize: '0.83rem' }}>
+                                                    <div style={{ fontWeight: 500 }}>{item.guardianName || '—'}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>{item.guardianRelation}</div>
+                                                </td>
+                                                <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 600, color: '#D97706' }}>
+                                                    {item.emergencyPhone || item.guardianPhone || '—'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            )}
+                        </div>
+
+                        {/* ── TABLA MEDICACIÓN ── */}
+                        <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #FECACA', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                            <div style={{ background: '#FEF2F2', padding: '1.2rem 1.8rem', borderBottom: '1px solid #FECACA', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                <h3 style={{ margin: 0, color: '#991B1B', fontSize: '1.05rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    💊 Estudiantes con Medicación Activa
+                                    <span style={{ background: '#DC2626', color: '#fff', fontSize: '0.78rem', padding: '2px 10px', borderRadius: '12px', fontWeight: 700 }}>{conMedicacion.length}</span>
+                                </h3>
+                                <span style={{ fontSize: '0.8rem', color: '#B91C1C' }}>Ordenado alfabéticamente</span>
+                            </div>
+                            {conMedicacion.length === 0 ? (
+                                <div style={{ padding: '3rem', textAlign: 'center', color: '#6B7280', fontSize: '0.9rem' }}>✅ Ningún estudiante tiene medicación activa.</div>
+                            ) : (
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
+                                    <thead>
+                                        <tr style={{ background: '#FEE2E2', borderBottom: '1px solid #FECACA' }}>
+                                            {['#', 'Estudiante', 'Cédula', 'Curso', 'Tipo de Sangre', 'Medicamento / Detalle', '¿También Alergias?', 'Representante', 'Tel. Emergencia'].map(h => (
+                                                <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontWeight: 700, color: '#991B1B', fontSize: '0.73rem', textTransform: 'uppercase', letterSpacing: '0.04em', whiteSpace: 'nowrap' }}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {conMedicacion.map((item, idx) => (
+                                            <tr key={item.id} style={{ borderBottom: '1px solid #FEF2F2', background: idx % 2 === 0 ? '#fff' : '#FFF9F9' }}
+                                                onMouseEnter={e => e.currentTarget.style.background = '#FFF1F2'}
+                                                onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 0 ? '#fff' : '#FFF9F9'}>
+                                                <td style={{ padding: '10px 14px', color: '#9CA3AF', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{idx + 1}</td>
+                                                <td style={{ padding: '10px 14px' }}>
+                                                    <div style={{ fontWeight: 700, color: 'var(--color-primary)' }}>{item.studentName}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#9CA3AF', marginTop: '2px' }}>{item.gender === 'Masculino' ? '♂' : '♀'} {item.age} años</div>
+                                                </td>
+                                                <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#6B7280' }}>{item.idCard || '—'}</td>
+                                                <td style={{ padding: '10px 14px', whiteSpace: 'nowrap' }}>
+                                                    <span style={{ background: 'var(--bg-dashboard)', padding: '3px 8px', borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', border: '1px solid var(--border-soft)' }}>
+                                                        {item.grade} <span style={{ color: 'var(--color-secondary)' }}>"{item.parallel}"</span>
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '10px 14px' }}>
+                                                    {item.bloodType ? <span style={{ padding: '3px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700, background: item.bloodType.includes('+') ? '#FEE2E2' : '#EFF6FF', color: item.bloodType.includes('+') ? '#DC2626' : '#2563EB' }}>{item.bloodType}</span> : <span style={{ color: '#9CA3AF' }}>—</span>}
+                                                </td>
+                                                <td style={{ padding: '10px 14px' }}>
+                                                    <span style={{ background: '#FEE2E2', color: '#991B1B', padding: '4px 10px', borderRadius: '8px', fontSize: '0.83rem', fontWeight: 600, display: 'inline-block', border: '1px solid #FECACA' }}>
+                                                        💊 {item.medicationDetail || 'Sin detalle especificado'}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '10px 14px', textAlign: 'center' }}>
+                                                    {item.hasAllergies
+                                                        ? <span style={{ background: '#FEF3C7', color: '#92400E', padding: '3px 10px', borderRadius: '10px', fontSize: '0.78rem', fontWeight: 700, whiteSpace: 'nowrap' }}>⚠️ {item.allergiesDetail || 'Sí'}</span>
+                                                        : <span style={{ color: '#10B981', fontWeight: 600, fontSize: '0.82rem' }}>✅ No</span>}
+                                                </td>
+                                                <td style={{ padding: '10px 14px', fontSize: '0.83rem' }}>
+                                                    <div style={{ fontWeight: 500 }}>{item.guardianName || '—'}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: '#9CA3AF' }}>{item.guardianRelation}</div>
+                                                </td>
+                                                <td style={{ padding: '10px 14px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 600, color: '#DC2626' }}>
+                                                    {item.emergencyPhone || item.guardianPhone || '—'}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            )}
+                        </div>
+                    </div>
+                    );
+                })()}
 
                 {/* ══ TAB: DUPLICADOS ══════════════════════════════ */}
                 {activeTab === 'duplicados' && (
