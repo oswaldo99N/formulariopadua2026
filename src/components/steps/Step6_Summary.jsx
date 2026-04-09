@@ -131,8 +131,8 @@ const Step6_Summary = ({ data, onBack }) => {
     const generateAndUploadPDF = async (data) => {
         const doc = new jsPDF();
 
-        const cPrimary = [59, 35, 20];
-        const cGold = [201, 168, 76];
+        const cPrimary = [0, 77, 64];
+        const cGold = [0, 128, 128];
         const cText = [40, 40, 40];
         const cMuted = [110, 110, 110];
         const cWhite = [255, 255, 255];
@@ -147,9 +147,9 @@ const Step6_Summary = ({ data, onBack }) => {
         for (let s = 0; s < strips; s++) {
             const t = s / (strips - 1);
             doc.setFillColor(
-                Math.round(59 + (255 - 59) * t),
-                Math.round(35 + (252 - 35) * t),
-                Math.round(20 + (245 - 20) * t)
+                Math.round(0 + (240 - 0) * t),
+                Math.round(77 + (253 - 77) * t),
+                Math.round(64 + (250 - 64) * t)
             );
             doc.rect(162 + s * sw, 0, sw + 0.5, 28, 'F');
         }

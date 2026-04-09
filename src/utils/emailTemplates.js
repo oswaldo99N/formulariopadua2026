@@ -10,22 +10,22 @@ export const getConfirmationEmailHTML = (data, pdfURL = null) => {
     <style>
         body { margin: 0; padding: 0; background-color: #f4f4f5; font-family: 'Helvetica', 'Arial', sans-serif; }
         .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .header { background: linear-gradient(135deg, #3B2314 0%, #5D4037 100%); padding: 30px 20px; text-align: center; }
+        .header { background: linear-gradient(135deg, #004D40 0%, #00695C 100%); padding: 30px 20px; text-align: center; }
         .logo-container { display: flex; justify-content: center; align-items: center; gap: 15px; margin-bottom: 15px; }
-        .logo-text { color: #C9A84C; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; margin-top: 10px; }
+        .logo-text { color: #008080; font-size: 14px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; margin-top: 10px; }
         .content { padding: 40px 30px; color: #333333; }
-        .h1 { color: #3B2314; font-size: 24px; font-weight: bold; margin-bottom: 10px; text-align: center; }
+        .h1 { color: #004D40; font-size: 24px; font-weight: bold; margin-bottom: 10px; text-align: center; }
         .subtitle { color: #666666; font-size: 16px; text-align: center; margin-bottom: 30px; line-height: 1.5; }
         .card { background-color: #FAFAFA; border: 1px solid #E5E5E5; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
         .card-row { display: flex; justify-content: space-between; border-bottom: 1px solid #EEEEEE; padding: 10px 0; }
         .card-row:last-child { border-bottom: none; }
         .card-label { color: #888888; font-size: 14px; font-weight: 500; }
-        .card-value { color: #3B2314; font-size: 14px; font-weight: bold; text-align: right; }
-        .highlight-box { background-color: #FFF8E1; border-left: 4px solid #C9A84C; padding: 15px; margin: 20px 0; font-size: 14px; color: #5D4037; }
+        .card-value { color: #004D40; font-size: 14px; font-weight: bold; text-align: right; }
+        .highlight-box { background-color: #F0FDFA; border-left: 4px solid #008080; padding: 15px; margin: 20px 0; font-size: 14px; color: #004D40; }
         .footer { background-color: #333333; color: #888888; padding: 20px; text-align: center; font-size: 12px; }
-        .btn { display: inline-block; background-color: #C9A84C; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
+        .btn { display: inline-block; background-color: #008080; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px; }
         .social-links { margin-top: 20px; }
-        .social-link { color: #C9A84C; text-decoration: none; margin: 0 10px; font-weight: bold; }
+        .social-link { color: #008080; text-decoration: none; margin: 0 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -45,7 +45,7 @@ export const getConfirmationEmailHTML = (data, pdfURL = null) => {
 
             <!-- Student Detail Card -->
             <div class="card">
-                <div style="text-align: center; margin-bottom: 15px; color: #C9A84C; font-size: 12px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">
+                <div style="text-align: center; margin-bottom: 15px; color: #008080; font-size: 12px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">
                     Datos del Participante
                 </div>
                 <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -76,11 +76,11 @@ export const getConfirmationEmailHTML = (data, pdfURL = null) => {
             
             <div style="text-align: center;">
                 ${pdfURL ? `
-                <div style="background-color: #FFF8E1; border: 2px solid #C9A84C; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
+                <div style="background-color: #F0FDFA; border: 2px solid #008080; border-radius: 8px; padding: 20px; margin-bottom: 20px; text-align: center;">
                     <div style="font-size: 28px; margin-bottom: 8px;">📋</div>
-                    <div style="font-weight: bold; color: #3B2314; font-size: 15px; margin-bottom: 6px;">Tu ficha de inscripción está lista</div>
+                    <div style="font-weight: bold; color: #004D40; font-size: 15px; margin-bottom: 6px;">Tu ficha de inscripción está lista</div>
                     <div style="font-size: 13px; color: #666; margin-bottom: 14px;">Descarga, imprime y firma físicamente el documento para entregarlo el día del retiro.</div>
-                    <a href="${pdfURL}" style="display: inline-block; background-color: #3B2314; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 10px;">
+                    <a href="${pdfURL}" style="display: inline-block; background-color: #004D40; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; margin-bottom: 10px;">
                         ⬇️ Descargar Ficha PDF
                     </a>
                     <div style="font-size: 11px; color: #999; margin-top: 8px;">El enlace estará disponible por 30 días.</div>

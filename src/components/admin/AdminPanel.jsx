@@ -246,8 +246,8 @@ const AdminPanel = () => {
     const generatePDF = async (record, isBulk = false, doc = null) => {
         if (!doc) doc = new jsPDF();
 
-        const cPrimary = [59, 35, 20];
-        const cGold = [201, 168, 76];
+        const cPrimary = [0, 77, 64];
+        const cGold = [0, 128, 128];
         const cText = [40, 40, 40];
         const cMuted = [110, 110, 110];
         const cWhite = [255, 255, 255];
@@ -260,8 +260,8 @@ const AdminPanel = () => {
         // Right panel — gradient: café → blanco (8 strips)
         const strips = 8;
         const stripW = 48 / strips;
-        const startR = 59, startG = 35, startB = 20;   // café oscuro (#3B2314)
-        const endR = 255, endG = 252, endB = 245;        // blanco cálido
+        const startR = 0, startG = 77, startB = 64;   // Teal oscuro
+        const endR = 240, endG = 253, endB = 250;        // F0FDFA
         for (let s = 0; s < strips; s++) {
             const t = s / (strips - 1);
             const r = Math.round(startR + (endR - startR) * t);
@@ -552,7 +552,7 @@ const AdminPanel = () => {
 
     const downloadSaludPDF = async () => {
         const D = new jsPDF();
-        const cPri = [59, 35, 20], cGold = [201, 168, 76], cText = [40, 40, 40];
+        const cPri = [0, 77, 64], cGold = [0, 128, 128], cText = [40, 40, 40];
         const cWhite = [255, 255, 255], cLite = [255, 251, 240];
         const M = 10, CW = 190;
         let y = 0;
