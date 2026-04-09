@@ -32,7 +32,7 @@ export const getConfirmationEmailHTML = (data, pdfURL = null) => {
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="logo-text">UNIDAD EDUCATIVA FISCOMISIONAL SAN ANTONIO DE PADUA</div>
+            <div class="logo-text">UNIDAD EDUCATIVA FISCOMISIONAL PABLO MUÑOZ VEGA</div>
             <h2 style="color: #ffffff; margin: 5px 0 0 0; font-weight: normal; font-size: 18px;">& METANOIIA</h2>
         </div>
 
@@ -92,7 +92,7 @@ export const getConfirmationEmailHTML = (data, pdfURL = null) => {
 
         <!-- Footer -->
         <div class="footer">
-            <p>© 2026 Metanoiia Corporation S.A.S. & Unidad Educativa Fiscomisional San Antonio de Padua</p>
+            <p>© 2026 Metanoiia Corporation S.A.S. & Unidad Educativa Fiscomisional Pablo Muñoz Vega</p>
             <p>Este es un mensaje automático, por favor no responder a este correo.</p>
             <div class="social-links">
                 <a href="https://instagram.com/metanoiiaec" class="social-link">Instagram</a> • 

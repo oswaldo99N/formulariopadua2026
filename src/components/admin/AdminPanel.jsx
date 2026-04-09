@@ -4,7 +4,7 @@ import Swal from 'sweetalert2';
 
 import { jsPDF } from "jspdf";
 
-import logoPadua from '../../assets/images/logo_padua.jpg';
+import logoPmv from '../../assets/images/escudo-pmv.png';
 import logoMetanoiia from '../../assets/images/logo_metanoiia.png';
 
 const Sidebar = ({ activeTab, setActiveTab, onLogout }) => (
@@ -187,7 +187,7 @@ const AdminPanel = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const q = query(collection(db, "registros"), orderBy("createdAt", "desc"));
+            const q = query(collection(db, "registros_pmv_2026"), orderBy("createdAt", "desc"));
             const querySnapshot = await getDocs(q);
             const data = querySnapshot.docs.map(doc => ({
                 id: doc.id,
@@ -221,7 +221,7 @@ const AdminPanel = () => {
 
         if (result.isConfirmed) {
             try {
-                await deleteDoc(doc(db, "registros", id));
+                await deleteDoc(doc(db, "registros_pmv_2026", id));
                 setRegistros(prev => prev.filter(item => item.id !== id));
                 Swal.fire({
                     icon: 'success',
@@ -281,7 +281,7 @@ const AdminPanel = () => {
             i.onload = () => res(i); i.onerror = rej;
         });
         try {
-            const [imgPadua, imgMeta] = await Promise.all([loadImg(logoPadua), loadImg(logoMetanoiia)]);
+            const [imgPadua, imgMeta] = await Promise.all([loadImg(logoPmv), loadImg(logoMetanoiia)]);
             doc.addImage(imgPadua, 'JPEG', 2, 2, 24, 24);   // left zone
 
             // Metanoiia — proportional, large, centered in right panel
@@ -304,7 +304,7 @@ const AdminPanel = () => {
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
         const subTitle = doc.splitTextToSize(
-            'RETIRO ESPIRITUAL · U.E. FISCOMISIONAL SAN ANTONIO DE PADUA & METANOIIA', 130
+            'RETIRO ESPIRITUAL · U.E. FISCOMISIONAL PABLO MUÑOZ VEGA & METANOIIA', 130
         );
         doc.text(subTitle, 96, 20, null, null, 'center');
 
@@ -435,7 +435,7 @@ const AdminPanel = () => {
         for (let p = 1; p <= pages; p++) {
             doc.setPage(p);
             doc.text(
-                `Generado el ${new Date().toLocaleDateString()} · U.E. Fiscomisional San Antonio de Padua & Metanoiia · Pág ${p}/${pages}`,
+                `Generado el ${new Date().toLocaleDateString()} · U.E. Fiscomisional Pablo Muñoz Vega & Metanoiia · Pág ${p}/${pages}`,
                 105, 292, null, null, 'center'
             );
         }
@@ -563,12 +563,12 @@ const AdminPanel = () => {
             D.setFont('helvetica', 'bold'); D.setTextColor(...cWhite); D.setFontSize(12);
             D.text('INFORME MÉDICO — RETIRO ESPIRITUAL 2026', 105, 11, null, null, 'center');
             D.setFont('helvetica', 'normal'); D.setFontSize(7.5);
-            D.text(`U.E. Fiscomisional San Antonio de Padua & Metanoiia · Generado: ${new Date().toLocaleDateString('es-EC')}`, 105, 20, null, null, 'center');
+            D.text(`U.E. Fiscomisional Pablo Muñoz Vega & Metanoiia · Generado: ${new Date().toLocaleDateString('es-EC')}`, 105, 20, null, null, 'center');
         };
 
         const loadImg = (src) => new Promise((res, rej) => { const i = new Image(); i.src = src; i.onload = () => res(i); i.onerror = rej; });
         try {
-            const [imgPadua, imgMeta] = await Promise.all([loadImg(logoPadua), loadImg(logoMetanoiia)]);
+            const [imgPadua, imgMeta] = await Promise.all([loadImg(logoPmv), loadImg(logoMetanoiia)]);
             drawPageHeader();
             D.addImage(imgPadua, 'JPEG', 2, 2, 22, 22);
             const mW = imgMeta.naturalWidth || 1, mH = imgMeta.naturalHeight || 1;
@@ -646,7 +646,7 @@ const AdminPanel = () => {
         for (let p = 1; p <= pages; p++) {
             D.setPage(p);
             D.setFontSize(6); D.setTextColor(170);
-            D.text(`Informe Médico · Retiro Espiritual 2026 · U.E. Fiscomisional San Antonio de Padua · Pág ${p}/${pages}`, 105, 293, null, null, 'center');
+            D.text(`Informe Médico · Retiro Espiritual 2026 · U.E. Fiscomisional Pablo Muñoz Vega · Pág ${p}/${pages}`, 105, 293, null, null, 'center');
         }
         D.save(`Informe_Medico_Retiro_2026_${new Date().toISOString().split('T')[0]}.pdf`);
     };
@@ -705,7 +705,7 @@ const AdminPanel = () => {
             .filter(Boolean)
             .join('; ') || 'No reportados';
 
-        const prompt = `Eres un asistente experto en gestión educativa y análisis de datos para retiros espirituales estudiantiles. Genera un REPORTE EJECUTIVO COMPLETO Y DETALLADO en español sobre el Retiro Espiritual 2026 de la Unidad Educativa Fiscomisional San Antonio de Padua (en colaboración con Metanoiia), con la siguiente información real:
+        const prompt = `Eres un asistente experto en gestión educativa y análisis de datos para retiros espirituales estudiantiles. Genera un REPORTE EJECUTIVO COMPLETO Y DETALLADO en español sobre el Retiro Espiritual 2026 de la Unidad Educativa Fiscomisional Pablo Muñoz Vega (en colaboración con Metanoiia), con la siguiente información real:
 
 ═══════════════════════════════════════════
 DATOS GENERALES
@@ -1003,7 +1003,7 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
         for (let p = 1; p <= pages; p++) {
             D.setPage(p);
             D.setFontSize(6.5); D.setTextColor(170);
-            D.text(`Reporte Ejecutivo · Retiro Espiritual 2026 · U.E. Fiscomisional San Antonio de Padua & Metanoiia · Pág ${p} / ${pages}`, 105, 293, null, null, 'center');
+            D.text(`Reporte Ejecutivo · Retiro Espiritual 2026 · U.E. Fiscomisional Pablo Muñoz Vega & Metanoiia · Pág ${p} / ${pages}`, 105, 293, null, null, 'center');
         }
         D.save(`Reporte_Retiro_Espiritual_2026_${new Date().toISOString().split('T')[0]}.pdf`);
     };
@@ -2035,7 +2035,7 @@ Usa un tono profesional, formal y propositivo. Sé específico con los números 
                                         <span style={{ fontSize: '1.8rem' }}>📋</span>
                                         <div>
                                             <h2 style={{ margin: 0, color: 'var(--color-primary)', fontFamily: 'var(--font-heading)', fontSize: '1.4rem' }}>Reporte Ejecutivo — Retiro Espiritual 2026</h2>
-                                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>U.E. Fiscomisional San Antonio de Padua & Metanoiia</p>
+                                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>U.E. Fiscomisional Pablo Muñoz Vega & Metanoiia</p>
                                         </div>
                                     </div>
 

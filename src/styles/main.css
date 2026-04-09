@@ -15,10 +15,10 @@
   --font-heading: 'Outfit', sans-serif;
 
   /* Paleta de Colores Padua Premium */
-  --color-primary: #3B2314;
-  /* Café Padua */
-  --color-secondary: #C9A84C;
-  /* Dorado Padua */
+  --color-primary: #004D40;
+  /* Dark Teal */
+  --color-secondary: #008080;
+  /* Metanoia Teal */
   --color-accent: #EAB308;
   /* Amarillo vibrante para CTAs */
   --color-bg: #F8FAFC;
@@ -45,26 +45,26 @@
   --shadow-soft: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 
   /* Estados Específicos */
-  --bg-warm: #FFF8F0;
-  --color-padua-gold: #C9A84C;
-  --color-padua-brown: #3B2314;
+  --bg-warm: #F0FDFA;
+  --color-padua-gold: #008080;
+  --color-padua-brown: #004D40;
   --color-metanoiia-teal: #008080;
-  --color-text: #1C1410;
-  --color-text-muted: #6B5C4E;
-  --color-text-light: #9E8A78;
+  --color-text: #1E293B;
+  --color-text-muted: #475569;
+  --color-text-light: #94A3B8;
 
   /* Borders */
-  --border-soft: rgba(201, 168, 76, 0.18);
-  --border-hover: rgba(201, 168, 76, 0.45);
-  --border-focus: #C9A84C;
+  --border-soft: rgba(0, 128, 128, 0.18);
+  --border-hover: rgba(0, 128, 128, 0.45);
+  --border-focus: #008080;
 
   /* Shadows */
-  --shadow-glow: 0 0 0 4px rgba(201, 168, 76, 0.12);
-  --shadow-card: 0 24px 60px -12px rgba(59, 35, 20, 0.18),
-    0 8px 20px -6px rgba(59, 35, 20, 0.10);
-  --shadow-field: 0 2px 8px rgba(59, 35, 20, 0.06);
-  --shadow-btn: 0 6px 20px rgba(201, 168, 76, 0.38);
-  --shadow-btn-hover: 0 10px 32px rgba(201, 168, 76, 0.52);
+  --shadow-glow: 0 0 0 4px rgba(0, 128, 128, 0.12);
+  --shadow-card: 0 24px 60px -12px rgba(0, 77, 64, 0.18),
+    0 8px 20px -6px rgba(0, 77, 64, 0.10);
+  --shadow-field: 0 2px 8px rgba(0, 77, 64, 0.06);
+  --shadow-btn: 0 6px 20px rgba(0, 128, 128, 0.38);
+  --shadow-btn-hover: 0 10px 32px rgba(0, 128, 128, 0.52);
 
   /* Radius */
   --radius-sm: 8px;
@@ -137,9 +137,9 @@ body {
   /* Background: animated warm parchment + sacred light */
   background-color: var(--bg-base);
   background-image:
-    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(201, 168, 76, 0.13) 0%, transparent 55%),
-    radial-gradient(ellipse 60% 70% at 100% 100%, rgba(0, 137, 123, 0.08) 0%, transparent 55%),
-    radial-gradient(ellipse 50% 40% at 50% 0%, rgba(59, 35, 20, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 80% 60% at 0% 0%, rgba(0, 128, 128, 0.13) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 70% at 100% 100%, rgba(0, 77, 64, 0.08) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 0%, rgba(0, 128, 128, 0.06) 0%, transparent 60%),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
   display: flex;
   justify-content: center;
@@ -236,7 +236,7 @@ p {
 /* ── Progress Bar ───────────────────────────────────────────── */
 .progress-track {
   height: 6px;
-  background: rgba(59, 35, 20, 0.08);
+  background: rgba(0, 77, 64, 0.08);
   border-radius: var(--radius-full);
   overflow: hidden;
   position: relative;
@@ -251,7 +251,7 @@ p {
       var(--color-metanoiia-teal) 100%);
   border-radius: var(--radius-full);
   transition: width var(--transition-liquid);
-  box-shadow: 0 0 12px rgba(201, 168, 76, 0.5);
+  box-shadow: 0 0 12px rgba(0, 128, 128, 0.5);
   position: relative;
 }
 
@@ -289,14 +289,14 @@ p {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: rgba(59, 35, 20, 0.12);
+  background: rgba(0, 77, 64, 0.12);
   transition: var(--transition-base);
   position: relative;
 }
 
 .step-dot.active {
   background: var(--color-padua-gold);
-  box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.2);
+  box-shadow: 0 0 0 4px rgba(0, 128, 128, 0.2);
   transform: scale(1.3);
 }
 

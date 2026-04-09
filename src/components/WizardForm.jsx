@@ -6,7 +6,8 @@ import Step4_Medical from './steps/Step4_Medical';
 import Step5_Clauses from './steps/Step5_Clauses';
 import Step6_Summary from './steps/Step6_Summary';
 
-import logoPadua from '../assets/images/logo_padua.jpg';
+import { db, collection, query, where, getDocs } from '../services/firebase';
+import logoPmv from '../assets/images/escudo-pmv.png';
 import logoMetanoiia from '../assets/images/logo_metanoiia.png';
 
 /* ── SVG Icon Helpers ─────────────────────────────────────── */
@@ -86,30 +87,23 @@ const Step1_Welcome = ({ onNext, setRetreatType, updateData }) => (
 
         <h1 style={{ marginBottom: '0.5rem', fontStyle: 'italic' }}>Retiro Espiritual</h1>
         <p style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.18em', color: 'var(--color-padua-gold)', marginBottom: '0.75rem' }}>
-            Unidad Educativa Fiscomisional San Antonio de Padua
+            Unidad Educativa Fiscomisional Pablo Muñoz Vega
         </p>
         <p style={{ maxWidth: '380px', margin: '0 auto 3rem', fontSize: '1rem', color: 'var(--color-text-muted)', fontStyle: 'italic', fontFamily: 'var(--font-heading)' }}>
             "Descubre, Conecta, Renueva. Un viaje hacia tu interior."
         </p>
 
         <p style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--color-text-light)', marginBottom: '1.2rem' }}>
-            Selecciona tu retiro
+            Comenzar proceso
         </p>
 
         <div style={{ display: 'grid', gap: '14px', maxWidth: '380px', margin: '0 auto' }}>
             <button
-                className="btn-retreat btn-retreat-women"
-                onClick={() => { setRetreatType('women'); updateData({ gender: 'Femenino' }); onNext(); }}
+                className="btn-primary"
+                style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
+                onClick={() => { onNext(); }}
             >
-                <IconWoman />
-                <span>Retiro de Mujeres</span>
-            </button>
-            <button
-                className="btn-retreat btn-retreat-men"
-                onClick={() => { setRetreatType('men'); updateData({ gender: 'Masculino' }); onNext(); }}
-            >
-                <IconMan />
-                <span>Retiro de Hombres</span>
+                <span>Ir a inscribirse</span>
             </button>
         </div>
     </div>
@@ -141,20 +135,48 @@ const Step2_StudentData = ({ data, updateData, onNext, onBack }) => {
         }
     };
 
-    const handleNext = () => {
+    const [isValidating, setIsValidating] = useState(false);
+
+    const handleNext = async () => {
         const { studentName, age, idCard, grade, parallel, gender } = data;
 
         if (!studentName?.trim() || !age || !idCard || !grade || !parallel || !gender) {
-            Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Por favor complete todos los campos obligatorios (incluyendo Paralelo).', confirmButtonColor: '#C9A84C' });
+            Swal.fire({ icon: 'warning', title: 'Campos incompletos', text: 'Por favor complete todos los campos obligatorios (incluyendo Género y Paralelo).', confirmButtonColor: 'var(--color-padua-gold)' });
             return;
         }
 
         if (idCard.length !== 10) {
-            Swal.fire({ icon: 'warning', title: 'Cédula inválida', text: 'La cédula debe tener 10 dígitos obligatorios.', confirmButtonColor: '#C9A84C' });
+            Swal.fire({ icon: 'warning', title: 'Cédula inválida', text: 'La cédula debe tener 10 dígitos obligatorios.', confirmButtonColor: 'var(--color-padua-gold)' });
             return;
         }
 
-        onNext();
+        setIsValidating(true);
+        try {
+            // Check for duplicate idCard
+            const qId = query(collection(db, "registros_pmv_2026"), where("idCard", "==", idCard));
+            const snapshotId = await getDocs(qId);
+            if (!snapshotId.empty) {
+                Swal.fire({ icon: 'error', title: 'Registro Duplicado', text: 'Ya existe una inscripción con este número de cédula.', confirmButtonColor: 'var(--color-padua-gold)' });
+                setIsValidating(false);
+                return;
+            }
+
+            // Check for duplicate studentName
+            const qName = query(collection(db, "registros_pmv_2026"), where("studentName", "==", studentName.trim()));
+            const snapshotName = await getDocs(qName);
+            if (!snapshotName.empty) {
+                Swal.fire({ icon: 'error', title: 'Registro Duplicado', text: 'Ya existe una inscripción con este nombre completo.', confirmButtonColor: 'var(--color-padua-gold)' });
+                setIsValidating(false);
+                return;
+            }
+
+            onNext();
+        } catch (error) {
+            console.error("Error validating duplicate:", error);
+            Swal.fire({ icon: 'error', title: 'Error de verificación', text: 'No pudimos verificar si ya estabas registrado. Intenta nuevamente.', confirmButtonColor: 'var(--color-padua-gold)' });
+        } finally {
+            setIsValidating(false);
+        }
     };
 
     return (
@@ -178,17 +200,6 @@ const Step2_StudentData = ({ data, updateData, onNext, onBack }) => {
 
                 <div className="grid-2">
                     <div className="form-group">
-                        <label htmlFor="age">Edad</label>
-                        <input
-                            id="age"
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="Ej. 15"
-                            value={data.age || ''}
-                            onChange={handleAgeChange}
-                        />
-                    </div>
-                    <div className="form-group">
                         <label htmlFor="idCard">Cédula</label>
                         <input
                             id="idCard"
@@ -199,6 +210,31 @@ const Step2_StudentData = ({ data, updateData, onNext, onBack }) => {
                             onChange={handleIdChange}
                             maxLength={10}
                         />
+                    </div>
+                    <div className="form-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div className="form-group">
+                            <label htmlFor="age">Edad</label>
+                            <input
+                                id="age"
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="Ej. 15"
+                                value={data.age || ''}
+                                onChange={handleAgeChange}
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="gender">Género</label>
+                            <select
+                                id="gender"
+                                value={data.gender || ''}
+                                onChange={(e) => updateData({ gender: e.target.value })}
+                            >
+                                <option value="">Selecciona...</option>
+                                <option value="Masculino">Masculino</option>
+                                <option value="Femenino">Femenino</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -237,8 +273,8 @@ const Step2_StudentData = ({ data, updateData, onNext, onBack }) => {
                 <button className="btn-secondary" onClick={onBack}>
                     <IconArrowLeft /> Atrás
                 </button>
-                <button className="btn-primary" onClick={handleNext}>
-                    Siguiente <IconArrowRight />
+                <button className="btn-primary" onClick={handleNext} disabled={isValidating}>
+                    {isValidating ? 'Verificando...' : 'Siguiente'} <IconArrowRight />
                 </button>
             </div>
         </div>
@@ -287,7 +323,7 @@ export default function WizardForm() {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             flexShrink: 0
                         }}>
-                            <img src={logoPadua} alt="Unidad Educativa Fiscomisional San Antonio de Padua"
+                            <img src={logoPmv} alt="Unidad Educativa Fiscomisional Pablo Muñoz Vega"
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div>
@@ -295,7 +331,7 @@ export default function WizardForm() {
                                 U.E. Fiscomisional
                             </div>
                             <div style={{ fontSize: '0.9rem', fontFamily: 'var(--font-heading)', fontWeight: 600, color: 'var(--color-primary)', lineHeight: 1.2 }}>
-                                San Antonio<br />de Padua
+                                Pablo Muñoz<br />Vega
                             </div>
                         </div>
                     </div>

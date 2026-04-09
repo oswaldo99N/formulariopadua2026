@@ -4,7 +4,7 @@ import { db, collection, addDoc, serverTimestamp } from '../../services/firebase
 import { getConfirmationEmailHTML } from '../../utils/emailTemplates';
 import Swal from 'sweetalert2';
 import { jsPDF } from 'jspdf';
-import logoPadua from '../../assets/images/logo_padua.jpg';
+import logoPmv from '../../assets/images/escudo-pmv.png';
 import logoMetanoiia from '../../assets/images/logo_metanoiia.png';
 
 const IconArrowLeft = () => (
@@ -164,7 +164,7 @@ const Step6_Summary = ({ data, onBack }) => {
             i.onload = () => res(i); i.onerror = rej;
         });
         try {
-            const [imgP, imgM] = await Promise.all([loadImg(logoPadua), loadImg(logoMetanoiia)]);
+            const [imgP, imgM] = await Promise.all([loadImg(logoPmv), loadImg(logoMetanoiia)]);
             doc.addImage(imgP, 'JPEG', 2, 2, 24, 24);
             const mW = imgM.naturalWidth || 1, mH = imgM.naturalHeight || 1;
             const maxW = 44, maxH = 24;
@@ -180,7 +180,7 @@ const Step6_Summary = ({ data, onBack }) => {
         doc.text('FICHA DE INSCRIPCIÓN', 96, 12, null, null, 'center');
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
-        const sub = doc.splitTextToSize('RETIRO ESPIRITUAL · U.E. FISCOMISIONAL SAN ANTONIO DE PADUA & METANOIIA', 130);
+        const sub = doc.splitTextToSize('RETIRO ESPIRITUAL · U.E. FISCOMISIONAL PABLO MUÑOZ VEGA & METANOIIA', 130);
         doc.text(sub, 96, 20, null, null, 'center');
 
         // ── CONTENT ───────────────────────────────────────────────
@@ -283,7 +283,7 @@ const Step6_Summary = ({ data, onBack }) => {
         const pages = doc.internal.getNumberOfPages();
         for (let p = 1; p <= pages; p++) {
             doc.setPage(p);
-            doc.text(`Generado el ${new Date().toLocaleString()} · U.E. Fiscomisional San Antonio de Padua & Metanoiia · Pág ${p}/${pages}`, 105, 292, null, null, 'center');
+            doc.text(`Generado el ${new Date().toLocaleString()} · U.E. Fiscomisional Pablo Muñoz Vega & Metanoiia · Pág ${p}/${pages}`, 105, 292, null, null, 'center');
         }
 
         // ── CLOUDINARY UPLOAD ─────────────────────────────────────
@@ -323,7 +323,7 @@ const Step6_Summary = ({ data, onBack }) => {
             }
 
             // 2. Guardar en Firestore
-            await addDoc(collection(db, "registros"), {
+            await addDoc(collection(db, "registros_pmv_2026"), {
                 ...data,
                 createdAt: serverTimestamp(),
                 userAgent: navigator.userAgent
