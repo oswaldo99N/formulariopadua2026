@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
 import { db, collection, addDoc, serverTimestamp } from '../../services/firebase';
 import { getConfirmationEmailHTML } from '../../utils/emailTemplates';
@@ -67,8 +67,16 @@ const SectionTitle = ({ children }) => (
     </div>
 );
 
-const SuccessView = () => (
-    <div className="animate-fade-in" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
+const SuccessView = () => {
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            window.location.href = "https://www.facebook.com/metanoiiaec";
+        }, 3000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    return (
+        <div className="animate-fade-in" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
         <div style={{
             width: '80px', height: '80px', margin: '0 auto 1.5rem',
             background: 'rgba(0,137,123,0.1)', borderRadius: '50%',
@@ -116,13 +124,14 @@ const SuccessView = () => (
 
         <button
             className="btn-primary"
-            onClick={() => window.location.reload()}
+            onClick={() => window.location.href = "https://www.facebook.com/metanoiiaec"}
             style={{ width: '100%', maxWidth: '300px' }}
         >
-            Volver al Inicio
+            Ir a Facebook
         </button>
     </div>
-);
+    );
+};
 
 const Step6_Summary = ({ data, onBack }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
